@@ -47,14 +47,31 @@ cmake ..
 make
 ```
 
-### Run the Application
-After a successful build, the executable will be located in the project's root directory.
+### Installation (Optional)
+To make the `CrystalBoard` command available system-wide, you can copy the compiled binary to a directory in your system's `PATH`. A common choice is `~/.local/bin`.
+
 ```bash
+# This command assumes you are in the project's root directory
+cp CrystalBoard ~/.local/bin/
+```
+
+### Run the Application
+After a successful build, the executable will be located in the project's root directory. If you've performed the installation step, you can run it from anywhere.
+```bash
+# From the project root
 ./CrystalBoard
+
+# Or from anywhere, if installed
+CrystalBoard
 ```
 
 ## Contributing
 This project is shared as-is, and active maintenance is not guaranteed. However, you are welcome to fork the repository and experiment. If you find a bug, you can open an issue to report it.
+
+## Usage Example: Hyprland Integration
+For users of the Hyprland window manager, a detailed guide on how to integrate CrystalBoard with keyboard shortcuts and window rules is available.
+
+➡️ **[View Hyprland Integration Guide](./docs/HYPRLAND_INTEGRATION.md)**
 
 ## License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
