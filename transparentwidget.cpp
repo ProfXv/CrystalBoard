@@ -183,7 +183,8 @@ void TransparentWidget::paintEvent(QPaintEvent *event)
 void TransparentWidget::wheelEvent(QWheelEvent *event)
 {
     if (m_isAdjustingBrushSize) {
-        int delta = (event->angleDelta().y() > 0) ? 1 : -1;
+        // Reversed direction: scroll up/forward decreases size, scroll down/backward increases size.
+        int delta = (event->angleDelta().y() > 0) ? -1 : 1;
         m_currentPenWidth = std::clamp(m_currentPenWidth + delta, 1, 100);
         update(); // Redraw cursor
     } else {
