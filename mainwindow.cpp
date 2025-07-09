@@ -21,13 +21,22 @@ MainWindow::MainWindow(QWidget *parent)
     stackedWidget->addWidget(drawingWidget);
     stackedWidget->addWidget(colorPickerWidget);
 
-    // Install event filters to catch right-clicks on child widgets
-    drawingWidget->installEventFilter(this);
+    // The color picker doesn't emit signals, so we must filter its events
     colorPickerWidget->installEventFilter(this);
 
-    // Connect color picker changes to the drawing widget's pen
+    // --- Connect Signals and Slots ---
+
+    // 1. When color is changed in picker, update drawing widget's pen
     connect(colorPickerWidget, &ColorPickerWidget::colorChanged,
             drawingWidget, &TransparentWidget::setPenColor);
+            
+    // 2. Right-click on drawing widget clears the canvas
+    connect(drawingWidget, &TransparentWidget::rightButtonClicked,
+            drawingWidget, &TransparentWidget::clearCanvas);
+
+    // 3. Right-double-click on drawing widget toggles the color picker view
+    connect(drawingWidget, &TransparentWidget::rightButtonDoubleClicked,
+            this, &MainWindow::toggleColorPicker);
             
     // Set initial color
     drawingWidget->setPenColor(colorPickerWidget->getCurrentColor());
@@ -46,15 +55,22 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     QMainWindow::keyPressEvent(event);
 }
 
+void MainWindow::toggleColorPicker()
+{
+    int currentIndex = stackedWidget->currentIndex();
+    int nextIndex = (currentIndex + 1) % stackedWidget->count();
+    stackedWidget->setCurrentIndex(nextIndex);
+}
+
 bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
-    if (event->type() == QEvent::MouseButtonPress) {
+    // This filter now ONLY handles events for the color picker,
+    // because the drawing widget handles its own clicks and emits signals.
+    if (obj == colorPickerWidget && event->type() == QEvent::MouseButtonDblClick) {
         QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
         if (mouseEvent->button() == Qt::RightButton) {
-            int currentIndex = stackedWidget->currentIndex();
-            int nextIndex = (currentIndex + 1) % stackedWidget->count();
-            stackedWidget->setCurrentIndex(nextIndex);
-            return true; // Event is handled, don't pass it further
+            toggleColorPicker();
+            return true; // Event is handled
         }
     }
     // Standard event processing for other events

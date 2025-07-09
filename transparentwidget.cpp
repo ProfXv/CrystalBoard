@@ -1,12 +1,19 @@
 #include "transparentwidget.h"
 #include <QEnterEvent>
+#include <QApplication>
 
 TransparentWidget::TransparentWidget(QWidget *parent)
     : QWidget(parent), drawing(false), mouseInside(false), m_isAdjustingBrushSize(false),
-      m_currentPenWidth(5), currentColor(255, 255, 255, 128)
+      m_isErasing(false), m_currentPenWidth(5), currentColor(255, 255, 255, 128)
 {
     setAttribute(Qt::WA_TranslucentBackground);
     setMouseTracking(true); // Needed for hover events
+
+    m_rightClickTimer = new QTimer(this);
+    m_rightClickTimer->setSingleShot(true);
+    // Use the system's double-click interval to be more adaptive
+    m_rightClickTimer->setInterval(QApplication::doubleClickInterval());
+    connect(m_rightClickTimer, &QTimer::timeout, this, &TransparentWidget::onRightClickTimeout);
 }
 
 TransparentWidget::~TransparentWidget() {}
@@ -14,6 +21,8 @@ TransparentWidget::~TransparentWidget() {}
 void TransparentWidget::setPenColor(const QColor &color)
 {
     currentColor = color;
+    m_isErasing = false; // Always switch back to pen tool when a color is chosen
+    update();
 }
 
 void TransparentWidget::undo()
@@ -30,6 +39,18 @@ void TransparentWidget::redo()
         paths.append(undonePaths.takeLast());
         update();
     }
+}
+
+void TransparentWidget::clearCanvas()
+{
+    paths.clear();
+    undonePaths.clear();
+    update();
+}
+
+void TransparentWidget::onRightClickTimeout()
+{
+    emit rightButtonClicked();
 }
 
 void TransparentWidget::enterEvent(QEnterEvent *event)
@@ -76,12 +97,26 @@ void TransparentWidget::mouseReleaseEvent(QMouseEvent *event)
     if (event->button() == Qt::LeftButton && drawing) {
         drawing = false;
         if (!currentPath.isEmpty()) {
-            paths.append({currentPath, currentColor, m_currentPenWidth});
+            QColor pathColor = m_isErasing ? QColor(0, 0, 0, 0) : currentColor;
+            paths.append({currentPath, pathColor, m_currentPenWidth});
             currentPath.clear();
         }
         update();
     } else if (event->button() == Qt::MiddleButton) {
         m_isAdjustingBrushSize = false;
+    } else if (event->button() == Qt::RightButton) {
+        m_rightClickTimer->start();
+    }
+}
+
+void TransparentWidget::mouseDoubleClickEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::LeftButton) {
+        m_isErasing = !m_isErasing;
+        update(); // Update cursor to reflect new mode
+    } else if (event->button() == Qt::RightButton) {
+        m_rightClickTimer->stop(); // CRITICAL: Stop the timer before emitting the signal
+        emit rightButtonDoubleClicked();
     }
 }
 
@@ -93,6 +128,13 @@ void TransparentWidget::paintEvent(QPaintEvent *event)
 
     // Draw all saved paths with their specific colors and widths
     for (const auto &pathData : paths) {
+        // Check if this is an eraser path
+        if (pathData.color.alpha() == 0) {
+            painter.setCompositionMode(QPainter::CompositionMode_Clear);
+        } else {
+            painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+        }
+
         QPen pen(pathData.color, pathData.penWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
         painter.setPen(pen);
         if (pathData.points.size() > 1) {
@@ -100,21 +142,41 @@ void TransparentWidget::paintEvent(QPaintEvent *event)
         }
     }
     
+    // Restore default composition mode for drawing the current path and cursor
+    painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+
     // Draw the current path being drawn
     if (drawing && currentPath.size() > 1) {
-        QPen pen(currentColor, m_currentPenWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+        QColor pathColor = m_isErasing ? QColor(0, 0, 0, 0) : currentColor;
+        
+        if (m_isErasing) {
+            painter.setCompositionMode(QPainter::CompositionMode_Clear);
+        }
+
+        QPen pen(pathColor, m_currentPenWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
         painter.setPen(pen);
         painter.drawPolyline(currentPath.constData(), currentPath.size());
+        
+        // Restore default mode after drawing
+        painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
     }
 
     // Draw custom cursor
     if (mouseInside) {
-        QPen cursorPen(currentColor);
-        cursorPen.setWidth(1); // Outline width
-        QBrush cursorBrush(currentColor);
-        painter.setPen(cursorPen);
-        painter.setBrush(cursorBrush);
-        painter.drawEllipse(cursorPos, m_currentPenWidth / 2, m_currentPenWidth / 2);
+        if (m_isErasing) {
+            // Eraser cursor: white circle with a black outline
+            painter.setPen(Qt::white);
+            painter.setBrush(Qt::transparent);
+            painter.drawEllipse(cursorPos, m_currentPenWidth / 2, m_currentPenWidth / 2);
+        } else {
+            // Pen cursor: solid color circle
+            QPen cursorPen(currentColor);
+            cursorPen.setWidth(1); // Outline width
+            QBrush cursorBrush(currentColor);
+            painter.setPen(cursorPen);
+            painter.setBrush(cursorBrush);
+            painter.drawEllipse(cursorPos, m_currentPenWidth / 2, m_currentPenWidth / 2);
+        }
     }
 }
 
