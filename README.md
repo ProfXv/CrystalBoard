@@ -15,7 +15,8 @@ CrystalBoard is a simple yet elegant desktop application that provides a transpa
 - **Simple Controls**:
     - `Left-click + Drag`: Draw on the canvas.
     - `Right-click`: Toggle the color picker.
-    - `Mouse Wheel`: Undo/Redo your strokes.
+    - `Scroll Wheel`: Undo/Redo your strokes.
+    - `Middle-click + Scroll Wheel`: Adjust brush size.
     - `Esc Key`: Instantly close the application.
 - **Custom Brush Cursor**: A circular cursor provides a real-time preview of your selected brush color and size.
 

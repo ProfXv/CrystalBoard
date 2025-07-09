@@ -9,11 +9,13 @@
 #include <QPainter>
 #include <QVector>
 #include <QColor>
+#include <algorithm> // For std::clamp
 
-// Struct to hold both the points of a path and its color
+// Struct to hold both the points of a path, its color, and its width
 struct PathData {
     QVector<QPoint> points;
     QColor color;
+    int penWidth;
 };
 
 class TransparentWidget : public QWidget
@@ -41,6 +43,8 @@ protected:
 private:
     bool drawing;
     bool mouseInside;
+    bool m_isAdjustingBrushSize;
+    int m_currentPenWidth;
     QPoint cursorPos;
     QColor currentColor;
     QVector<QPoint> currentPath;

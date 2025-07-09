@@ -2,7 +2,8 @@
 #include <QEnterEvent>
 
 TransparentWidget::TransparentWidget(QWidget *parent)
-    : QWidget(parent), drawing(false), mouseInside(false), currentColor(255, 255, 255, 128)
+    : QWidget(parent), drawing(false), mouseInside(false), m_isAdjustingBrushSize(false),
+      m_currentPenWidth(5), currentColor(255, 255, 255, 128)
 {
     setAttribute(Qt::WA_TranslucentBackground);
     setMouseTracking(true); // Needed for hover events
@@ -56,6 +57,8 @@ void TransparentWidget::mousePressEvent(QMouseEvent *event)
         currentPath.clear();
         currentPath.append(event->position().toPoint());
         update();
+    } else if (event->button() == Qt::MiddleButton) {
+        m_isAdjustingBrushSize = true;
     }
 }
 
@@ -73,10 +76,12 @@ void TransparentWidget::mouseReleaseEvent(QMouseEvent *event)
     if (event->button() == Qt::LeftButton && drawing) {
         drawing = false;
         if (!currentPath.isEmpty()) {
-            paths.append({currentPath, currentColor});
+            paths.append({currentPath, currentColor, m_currentPenWidth});
             currentPath.clear();
         }
         update();
+    } else if (event->button() == Qt::MiddleButton) {
+        m_isAdjustingBrushSize = false;
     }
 }
 
@@ -86,9 +91,9 @@ void TransparentWidget::paintEvent(QPaintEvent *event)
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing, true);
 
-    // Draw all saved paths with their specific colors
+    // Draw all saved paths with their specific colors and widths
     for (const auto &pathData : paths) {
-        QPen pen(pathData.color, 5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+        QPen pen(pathData.color, pathData.penWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
         painter.setPen(pen);
         if (pathData.points.size() > 1) {
             painter.drawPolyline(pathData.points.constData(), pathData.points.size());
@@ -97,7 +102,7 @@ void TransparentWidget::paintEvent(QPaintEvent *event)
     
     // Draw the current path being drawn
     if (drawing && currentPath.size() > 1) {
-        QPen pen(currentColor, 5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+        QPen pen(currentColor, m_currentPenWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
         painter.setPen(pen);
         painter.drawPolyline(currentPath.constData(), currentPath.size());
     }
@@ -109,16 +114,21 @@ void TransparentWidget::paintEvent(QPaintEvent *event)
         QBrush cursorBrush(currentColor);
         painter.setPen(cursorPen);
         painter.setBrush(cursorBrush);
-        int cursorDiameter = 5; // Same as pen width
-        painter.drawEllipse(cursorPos, cursorDiameter, cursorDiameter);
+        painter.drawEllipse(cursorPos, m_currentPenWidth / 2, m_currentPenWidth / 2);
     }
 }
 
 void TransparentWidget::wheelEvent(QWheelEvent *event)
 {
-    if (event->angleDelta().y() > 0) {
-        undo();
+    if (m_isAdjustingBrushSize) {
+        int delta = (event->angleDelta().y() > 0) ? 1 : -1;
+        m_currentPenWidth = std::clamp(m_currentPenWidth + delta, 1, 100);
+        update(); // Redraw cursor
     } else {
-        redo();
+        if (event->angleDelta().y() > 0) {
+            undo();
+        } else {
+            redo();
+        }
     }
 }
