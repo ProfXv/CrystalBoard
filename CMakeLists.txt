@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(TransparentCanvas LANGUAGES CXX)
+project(CrystalBoard LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -14,7 +14,7 @@ set(CMAKE_AUTOUIC ON)
 
 find_package(Qt6 COMPONENTS Widgets REQUIRED)
 
-add_executable(TransparentCanvas
+add_executable(CrystalBoard
     main.cpp
     mainwindow.h
     mainwindow.cpp
@@ -24,4 +24,4 @@ add_executable(TransparentCanvas
     colorpickerwidget.cpp
 )
 
-target_link_libraries(TransparentCanvas PRIVATE Qt6::Widgets)
+target_link_libraries(CrystalBoard PRIVATE Qt6::Widgets)

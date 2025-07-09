@@ -1,4 +1,4 @@
-# Transparent Canvas v0.1.0
+# CrystalBoard v0.1.0
 
 A simple, transparent desktop canvas application for basic drawing.
 
@@ -36,8 +36,8 @@ A simple, transparent desktop canvas application for basic drawing.
 
 ### Running
 
-The executable `TransparentCanvas` will be created in the project's root directory.
+The executable `CrystalBoard` will be created in the project's root directory.
 
 ```bash
-./TransparentCanvas
+./CrystalBoard
 ```
