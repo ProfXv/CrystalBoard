@@ -115,7 +115,8 @@ void ColorPickerWidget::updateColor()
     int b = blueSlider->value();
     currentColor.setRgb(r, g, b, 128);
 
-    const QString handleStyle =
+    const QString baseStyle =
+        "QSlider { min-height: 40px; }"
         "QSlider::handle:horizontal {"
         "    background: #888;"
         "    border: 1px solid #555;"
@@ -129,9 +130,9 @@ void ColorPickerWidget::updateColor()
     QString greenGrooveColor = QString("rgb(0, %1, 0)").arg(g);
     QString blueGrooveColor = QString("rgb(0, 0, %1)").arg(b);
 
-    redSlider->setStyleSheet(QString("QSlider::groove:horizontal { height: 10px; border-radius: 5px; background-color: %1; } %2").arg(redGrooveColor, handleStyle));
-    greenSlider->setStyleSheet(QString("QSlider::groove:horizontal { height: 10px; border-radius: 5px; background-color: %1; } %2").arg(greenGrooveColor, handleStyle));
-    blueSlider->setStyleSheet(QString("QSlider::groove:horizontal { height: 10px; border-radius: 5px; background-color: %1; } %2").arg(blueGrooveColor, handleStyle));
+    redSlider->setStyleSheet(QString("QSlider::groove:horizontal { height: 10px; border-radius: 5px; background-color: %1; } %2").arg(redGrooveColor, baseStyle));
+    greenSlider->setStyleSheet(QString("QSlider::groove:horizontal { height: 10px; border-radius: 5px; background-color: %1; } %2").arg(greenGrooveColor, baseStyle));
+    blueSlider->setStyleSheet(QString("QSlider::groove:horizontal { height: 10px; border-radius: 5px; background-color: %1; } %2").arg(blueGrooveColor, baseStyle));
 
     updateRgbLabel();
     update(); // Trigger paintEvent to update background
