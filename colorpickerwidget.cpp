@@ -12,7 +12,28 @@ ColorPickerWidget::ColorPickerWidget(QWidget *parent) : QWidget(parent), current
 
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(50, 50, 50, 50);
-    mainLayout->setSpacing(30);
+    mainLayout->setSpacing(20);
+
+    // --- Help Panel ---
+    helpLabel = new QLabel(this);
+    const QString helpTextStyle =
+        "background-color: rgba(0, 0, 0, 0.5);"
+        "color: white;"
+        "padding: 15px;"
+        "font-size: 16px;"
+        "border-radius: 10px;";
+    const QString helpText =
+        "<b>Left-click + Drag:</b> Draw<br>"
+        "<b>Double-click Left:</b> Cycle Tools<br>"
+        "<b>Right-click:</b> Clear Canvas<br>"
+        "<b>Double-click Right:</b> Toggle This View<br>"
+        "<b>Middle-click + Scroll:</b> Adjust Size<br>"
+        "<b>Scroll Wheel:</b> Undo/Redo<br>"
+        "<b>Esc Key:</b> Exit";
+    helpLabel->setText(helpText);
+    helpLabel->setStyleSheet(helpTextStyle);
+    helpLabel->setAlignment(Qt::AlignCenter);
+    mainLayout->addWidget(helpLabel);
     
     mainLayout->addStretch(1);
 

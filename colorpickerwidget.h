@@ -37,6 +37,7 @@ private:
     void setupSlider(QSlider *slider);
     void updateRgbLabel();
 
+    QLabel *helpLabel;
     QSlider *redSlider;
     QSlider *greenSlider;
     QSlider *blueSlider;
