@@ -8,16 +8,20 @@ CrystalBoard is a simple yet elegant desktop application that provides a transpa
 
 ### Core Functionality
 - **Transparent Canvas**: The main window is fully transparent, letting you see everything on your desktop underneath.
-- **Smooth Drawing**: Use your mouse to draw fluid lines with ease.
-- **Versatile Color Picker**: A dedicated widget with RGB sliders allows for precise color selection. The slider tracks dynamically update to show a pure color gradient.
+- **Versatile Drawing Tools**:
+    - **Pen**: Draw smooth, freeform lines.
+    - **Eraser**: Clear parts of your drawing.
+    - **Line, Rectangle, Circle**: Draw basic geometric shapes (outlines only).
+- **Rich Color Picker**: A dedicated widget with RGB sliders allows for precise color selection. The slider tracks dynamically update to show a pure color gradient.
+- **Tool Selection Bar**: Quickly switch between available drawing tools from within the color picker view.
 
 ### User Interaction
 - **Simple Controls**:
     - `Left-click + Drag`: Draw with the current tool.
-    - `Double-click Left Button`: Toggle between Pen and Eraser.
+    - `Double-click Left Button`: Cycle through all available tools (Pen, Eraser, Line, etc.).
     - `Right-click`: Clear the entire canvas.
     - `Double-click Right Button`: Toggle the Color Picker view.
-    - `Middle-click + Scroll Wheel`: Adjust Pen/Eraser size.
+    - `Middle-click + Scroll Wheel`: Adjust Pen/Eraser/Shape outline size.
     - `Scroll Wheel`: Undo/Redo strokes.
     - `Esc Key`: Instantly close the application.
 - **Custom Brush Cursor**: A circular cursor provides a real-time preview of your selected tool, color, and size.

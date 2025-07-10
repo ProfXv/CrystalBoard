@@ -11,12 +11,23 @@
 #include <QColor>
 #include <QTimer>
 #include <algorithm> // For std::clamp
+#include <cmath> // For std::atan2, std::cos, std::sin
 
-// Struct to hold both the points of a path, its color, and its width
+// Define Tool enum accessible by other classes
+enum class Tool {
+    Pen,
+    Eraser,
+    Line,
+    Rectangle,
+    Circle
+};
+
+// Struct to hold both the points of a path, its color, its width, and the tool used
 struct PathData {
     QVector<QPoint> points;
     QColor color;
     int penWidth;
+    Tool tool;
 };
 
 class TransparentWidget : public QWidget
@@ -24,7 +35,7 @@ class TransparentWidget : public QWidget
     Q_OBJECT
 
 public:
-    TransparentWidget(QWidget *parent = nullptr);
+    explicit TransparentWidget(QWidget *parent = nullptr);
     ~TransparentWidget();
 
 signals:
@@ -33,6 +44,7 @@ signals:
 
 public slots:
     void setPenColor(const QColor &color);
+    void setTool(Tool newTool);
     void undo();
     void redo();
     void clearCanvas();
@@ -54,7 +66,7 @@ private:
     bool drawing;
     bool mouseInside;
     bool m_isAdjustingBrushSize;
-    bool m_isErasing;
+    Tool m_currentTool;
     int m_currentPenWidth;
     QPoint cursorPos;
     QColor currentColor;

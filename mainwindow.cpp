@@ -38,6 +38,10 @@ MainWindow::MainWindow(QWidget *parent)
     connect(drawingWidget, &TransparentWidget::rightButtonDoubleClicked,
             this, &MainWindow::toggleColorPicker);
             
+    // 4. When a tool is selected in picker, update drawing widget's tool
+    connect(colorPickerWidget, &ColorPickerWidget::toolSelected,
+            drawingWidget, &TransparentWidget::setTool);
+
     // Set initial color
     drawingWidget->setPenColor(colorPickerWidget->getCurrentColor());
 }

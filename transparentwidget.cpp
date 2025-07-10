@@ -4,7 +4,7 @@
 
 TransparentWidget::TransparentWidget(QWidget *parent)
     : QWidget(parent), drawing(false), mouseInside(false), m_isAdjustingBrushSize(false),
-      m_isErasing(false), m_currentPenWidth(5), currentColor(255, 255, 255, 128)
+      m_currentTool(Tool::Pen), m_currentPenWidth(5), currentColor(255, 255, 255, 128)
 {
     setAttribute(Qt::WA_TranslucentBackground);
     setMouseTracking(true); // Needed for hover events
@@ -21,8 +21,17 @@ TransparentWidget::~TransparentWidget() {}
 void TransparentWidget::setPenColor(const QColor &color)
 {
     currentColor = color;
-    m_isErasing = false; // Always switch back to pen tool when a color is chosen
+    // If the current tool is the eraser, switch back to the pen tool
+    if (m_currentTool == Tool::Eraser) {
+        m_currentTool = Tool::Pen;
+    }
     update();
+}
+
+void TransparentWidget::setTool(Tool newTool)
+{
+    m_currentTool = newTool;
+    update(); // Update cursor
 }
 
 void TransparentWidget::undo()
@@ -77,6 +86,10 @@ void TransparentWidget::mousePressEvent(QMouseEvent *event)
         undonePaths.clear();
         currentPath.clear();
         currentPath.append(event->position().toPoint());
+        // For shapes, we need a second point to start
+        if (m_currentTool != Tool::Pen && m_currentTool != Tool::Eraser) {
+            currentPath.append(event->position().toPoint());
+        }
         update();
     } else if (event->button() == Qt::MiddleButton) {
         m_isAdjustingBrushSize = true;
@@ -87,7 +100,12 @@ void TransparentWidget::mouseMoveEvent(QMouseEvent *event)
 {
     cursorPos = event->position().toPoint();
     if (drawing) {
-        currentPath.append(event->position().toPoint());
+        if (m_currentTool == Tool::Pen || m_currentTool == Tool::Eraser) {
+            currentPath.append(event->position().toPoint());
+        } else {
+            // For shapes, just update the second point for live preview
+            currentPath[1] = event->position().toPoint();
+        }
     }
     update();
 }
@@ -97,8 +115,8 @@ void TransparentWidget::mouseReleaseEvent(QMouseEvent *event)
     if (event->button() == Qt::LeftButton && drawing) {
         drawing = false;
         if (!currentPath.isEmpty()) {
-            QColor pathColor = m_isErasing ? QColor(0, 0, 0, 0) : currentColor;
-            paths.append({currentPath, pathColor, m_currentPenWidth});
+            QColor pathColor = (m_currentTool == Tool::Eraser) ? QColor(0, 0, 0, 0) : currentColor;
+            paths.append({currentPath, pathColor, m_currentPenWidth, m_currentTool});
             currentPath.clear();
         }
         update();
@@ -112,7 +130,8 @@ void TransparentWidget::mouseReleaseEvent(QMouseEvent *event)
 void TransparentWidget::mouseDoubleClickEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton) {
-        m_isErasing = !m_isErasing;
+        // Cycle through tools
+        m_currentTool = static_cast<Tool>((static_cast<int>(m_currentTool) + 1) % 5);
         update(); // Update cursor to reflect new mode
     } else if (event->button() == Qt::RightButton) {
         m_rightClickTimer->stop(); // CRITICAL: Stop the timer before emitting the signal
@@ -126,52 +145,79 @@ void TransparentWidget::paintEvent(QPaintEvent *event)
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing, true);
 
-    // Draw all saved paths with their specific colors and widths
+    // Draw all saved paths
     for (const auto &pathData : paths) {
-        // Check if this is an eraser path
-        if (pathData.color.alpha() == 0) {
+        QPen pen(pathData.color, pathData.penWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+        painter.setPen(pen);
+        painter.setBrush(Qt::NoBrush);
+
+        if (pathData.tool == Tool::Eraser) {
             painter.setCompositionMode(QPainter::CompositionMode_Clear);
         } else {
             painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
         }
 
-        QPen pen(pathData.color, pathData.penWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
-        painter.setPen(pen);
         if (pathData.points.size() > 1) {
-            painter.drawPolyline(pathData.points.constData(), pathData.points.size());
+            switch (pathData.tool) {
+                case Tool::Pen:
+                case Tool::Eraser:
+                    painter.drawPolyline(pathData.points.constData(), pathData.points.size());
+                    break;
+                case Tool::Line:
+                    painter.drawLine(pathData.points.first(), pathData.points.last());
+                    break;
+                case Tool::Rectangle:
+                    painter.drawRect(QRect(pathData.points.first(), pathData.points.last()));
+                    break;
+                case Tool::Circle:
+                    painter.drawEllipse(QRect(pathData.points.first(), pathData.points.last()));
+                    break;
+            }
         }
     }
     
     // Restore default composition mode for drawing the current path and cursor
     painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
-    // Draw the current path being drawn
+    // Draw the current path being drawn (live preview)
     if (drawing && currentPath.size() > 1) {
-        QColor pathColor = m_isErasing ? QColor(0, 0, 0, 0) : currentColor;
-        
-        if (m_isErasing) {
+        QColor pathColor = (m_currentTool == Tool::Eraser) ? QColor(0, 0, 0, 0) : currentColor;
+        QPen pen(pathColor, m_currentPenWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+        painter.setPen(pen);
+        painter.setBrush(Qt::NoBrush);
+
+        if (m_currentTool == Tool::Eraser) {
             painter.setCompositionMode(QPainter::CompositionMode_Clear);
         }
 
-        QPen pen(pathColor, m_currentPenWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
-        painter.setPen(pen);
-        painter.drawPolyline(currentPath.constData(), currentPath.size());
+        switch (m_currentTool) {
+            case Tool::Pen:
+            case Tool::Eraser:
+                painter.drawPolyline(currentPath.constData(), currentPath.size());
+                break;
+            case Tool::Line:
+                painter.drawLine(currentPath.first(), currentPath.last());
+                break;
+            case Tool::Rectangle:
+                painter.drawRect(QRect(currentPath.first(), currentPath.last()));
+                break;
+            case Tool::Circle:
+                painter.drawEllipse(QRect(currentPath.first(), currentPath.last()));
+                break;
+        }
         
-        // Restore default mode after drawing
         painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
     }
 
     // Draw custom cursor
     if (mouseInside) {
-        if (m_isErasing) {
-            // Eraser cursor: white circle with a black outline
+        if (m_currentTool == Tool::Eraser) {
             painter.setPen(Qt::white);
             painter.setBrush(Qt::transparent);
             painter.drawEllipse(cursorPos, m_currentPenWidth / 2, m_currentPenWidth / 2);
         } else {
-            // Pen cursor: solid color circle
             QPen cursorPen(currentColor);
-            cursorPen.setWidth(1); // Outline width
+            cursorPen.setWidth(1);
             QBrush cursorBrush(currentColor);
             painter.setPen(cursorPen);
             painter.setBrush(cursorBrush);
@@ -183,10 +229,9 @@ void TransparentWidget::paintEvent(QPaintEvent *event)
 void TransparentWidget::wheelEvent(QWheelEvent *event)
 {
     if (m_isAdjustingBrushSize) {
-        // Reversed direction: scroll up/forward decreases size, scroll down/backward increases size.
         int delta = (event->angleDelta().y() > 0) ? -1 : 1;
         m_currentPenWidth = std::clamp(m_currentPenWidth + delta, 1, 100);
-        update(); // Redraw cursor
+        update();
     } else {
         if (event->angleDelta().y() > 0) {
             undo();

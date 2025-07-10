@@ -7,6 +7,7 @@
 #include <QLabel>
 #include <QColor>
 #include <QPaintEvent>
+#include "transparentwidget.h" // Include for the Tool enum
 
 class ColorPickerWidget : public QWidget
 {
@@ -18,6 +19,7 @@ public:
 
 signals:
     void colorChanged(const QColor &color);
+    void toolSelected(Tool tool);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -48,6 +50,13 @@ private:
     
     QLabel *rgbLabel;
     QColor currentColor;
+
+    // Tool buttons
+    QPushButton *penButton;
+    QPushButton *eraserButton;
+    QPushButton *lineButton;
+    QPushButton *rectButton;
+    QPushButton *circleButton;
 };
 
 #endif // COLORPICKERWIDGET_H
