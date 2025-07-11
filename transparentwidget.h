@@ -22,6 +22,13 @@ enum class Tool {
     Circle
 };
 
+// Define the modes for the scroll wheel in the desired order
+enum class ScrollMode {
+    History,
+    BrushSize,
+    ToolSwitch
+};
+
 // Struct to hold both the points of a path, its color, its width, and the tool used
 struct PathData {
     QVector<QPoint> points;
@@ -62,19 +69,29 @@ protected:
 
 private slots:
     void onRightClickTimeout();
+    void hideModeIndicator();
 
 private:
+    void cycleScrollMode();
+    QString scrollModeToString() const;
+    QString toolToString(Tool tool) const;
+    void showIndicator(const QString &subText = "");
+
     bool drawing;
     bool mouseInside;
-    bool m_isAdjustingBrushSize;
     Tool m_currentTool;
+    ScrollMode m_scrollMode;
     int m_currentPenWidth;
     QPoint cursorPos;
     QColor currentColor;
     QVector<QPoint> currentPath;
     QVector<PathData> paths;
     QVector<PathData> undonePaths;
+    
     QTimer *m_rightClickTimer;
+    QTimer *m_indicatorTimer;
+    bool m_showIndicator;
+    QString m_indicatorSubText;
 };
 
 #endif // TRANSPARENTWIDGET_H

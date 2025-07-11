@@ -20,7 +20,7 @@ ColorPickerWidget::ColorPickerWidget(QWidget *parent) : QWidget(parent), current
         "background-color: black;"
         "color: white;"
         "padding: 15px;"
-        "font-size: 16px;"
+        "font-size: 18px;"
         "border-radius: 10px;";
     const QString helpText =
         "<div align='center'>"
@@ -28,18 +28,18 @@ ColorPickerWidget::ColorPickerWidget(QWidget *parent) : QWidget(parent), current
         "<p><i>A crystal-clear, transparent canvas that floats above your desktop.</i></p>"
         "</div>"
         "<div align='center'>"
-        "<table style='width:100%; margin-top: 15px; border-collapse: collapse; border-top: 2px solid white; border-bottom: 2px solid white;'>"
-        "<thead style='border-bottom: 2px solid white;'>"
+        "<table style='width:100%; margin-top: 15px; border-collapse: collapse;'>"
+        "<thead style='border-top: 2px solid white; border-bottom: 2px solid white;'>"
         "<tr><th style='padding: 10px; text-align: center;'>Left Button</th><th style='padding: 10px; text-align: center;'>Middle Button</th><th style='padding: 10px; text-align: center;'>Right Button</th></tr>"
         "</thead>"
-        "<tbody>"
-        "<tr><td style='padding: 10px; text-align: center;'>Click + Drag<br><i>Draw</i></td><td style='padding: 10px; text-align: center;'>Double-click<br><i>Exit App</i></td><td style='padding: 10px; text-align: center;'>Click<br><i>Clear Canvas</i></td></tr>"
-        "<tr><td style='padding: 10px; text-align: center;'>Double-click<br><i>Cycle Tools</i></td><td style='padding: 10px; text-align: center;'>Scroll<br><i>Undo/Redo</i></td><td style='padding: 10px; text-align: center;'>Double-click<br><i>Toggle View</i></td></tr>"
-        "<tr><td style='padding: 10px; text-align: center;'></td><td style='padding: 10px; text-align: center;'>Click + Scroll<br><i>Adjust Size</i></td><td style='padding: 10px; text-align: center;'></td></tr>"
+        "<tbody style='border-bottom: 2px solid white;'>"
+        "<tr><td style='padding: 10px; text-align: center;'>Click + Drag<br>draw</td><td style='padding: 10px; text-align: center;'>Click<br>cycle scroll mode</td><td style='padding: 10px; text-align: center;'>Click<br>clear canvas</td></tr>"
+        "<tr><td style='padding: 10px; text-align: center;'></td><td style='padding: 10px; text-align: center;'>Double-click<br>exit app</td><td style='padding: 10px; text-align: center;'>Double-click<br>toggle view</td></tr>"
+        "<tr><td style='padding: 10px; text-align: center;'></td><td style='padding: 10px; text-align: center;'>Scroll<br>use active mode</td><td style='padding: 10px; text-align: center;'></td></tr>"
         "</tbody>"
         "</table>"
-        "</div>"
-        "<p style='text-align: center; margin-top: 10px;'><b>ESC Key:</b> Exit Application</p>";
+        "<p style='text-align: center; margin-top: 15px;'><b>ESC Key:</b> exit app</p>"
+        "</div>";
     helpLabel->setText(helpText);
     helpLabel->setStyleSheet(helpTextStyle);
     helpLabel->setAlignment(Qt::AlignCenter);

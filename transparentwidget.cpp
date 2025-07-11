@@ -1,19 +1,28 @@
 #include "transparentwidget.h"
 #include <QEnterEvent>
 #include <QApplication>
+#include <QPainterPath>
+#include <QTextDocument>
+#include <QAbstractTextDocumentLayout>
 
 TransparentWidget::TransparentWidget(QWidget *parent)
-    : QWidget(parent), drawing(false), mouseInside(false), m_isAdjustingBrushSize(false),
-      m_currentTool(Tool::Pen), m_currentPenWidth(5), currentColor(255, 255, 255, 128)
+    : QWidget(parent), drawing(false), mouseInside(false),
+      m_currentTool(Tool::Pen), m_scrollMode(ScrollMode::History),
+      m_currentPenWidth(5), currentColor(255, 255, 255, 128),
+      m_showIndicator(false)
 {
     setAttribute(Qt::WA_TranslucentBackground);
-    setMouseTracking(true); // Needed for hover events
+    setMouseTracking(true);
 
     m_rightClickTimer = new QTimer(this);
     m_rightClickTimer->setSingleShot(true);
-    // Use the system's double-click interval to be more adaptive
     m_rightClickTimer->setInterval(QApplication::doubleClickInterval());
     connect(m_rightClickTimer, &QTimer::timeout, this, &TransparentWidget::onRightClickTimeout);
+
+    m_indicatorTimer = new QTimer(this);
+    m_indicatorTimer->setSingleShot(true);
+    m_indicatorTimer->setInterval(1000); // 1 second
+    connect(m_indicatorTimer, &QTimer::timeout, this, &TransparentWidget::hideModeIndicator);
 }
 
 TransparentWidget::~TransparentWidget() {}
@@ -21,9 +30,8 @@ TransparentWidget::~TransparentWidget() {}
 void TransparentWidget::setPenColor(const QColor &color)
 {
     currentColor = color;
-    // If the current tool is the eraser, switch back to the pen tool
     if (m_currentTool == Tool::Eraser) {
-        m_currentTool = Tool::Pen;
+        setTool(Tool::Pen);
     }
     update();
 }
@@ -31,13 +39,15 @@ void TransparentWidget::setPenColor(const QColor &color)
 void TransparentWidget::setTool(Tool newTool)
 {
     m_currentTool = newTool;
-    update(); // Update cursor
+    showIndicator(QString("<i>%1</i>").arg(toolToString(m_currentTool)));
+    update();
 }
 
 void TransparentWidget::undo()
 {
     if (!paths.isEmpty()) {
         undonePaths.append(paths.takeLast());
+        showIndicator("<i>undo</i>");
         update();
     }
 }
@@ -46,6 +56,7 @@ void TransparentWidget::redo()
 {
     if (!undonePaths.isEmpty()) {
         paths.append(undonePaths.takeLast());
+        showIndicator("<i>redo</i>");
         update();
     }
 }
@@ -60,6 +71,12 @@ void TransparentWidget::clearCanvas()
 void TransparentWidget::onRightClickTimeout()
 {
     emit rightButtonClicked();
+}
+
+void TransparentWidget::hideModeIndicator()
+{
+    m_showIndicator = false;
+    update();
 }
 
 void TransparentWidget::enterEvent(QEnterEvent *event)
@@ -86,13 +103,10 @@ void TransparentWidget::mousePressEvent(QMouseEvent *event)
         undonePaths.clear();
         currentPath.clear();
         currentPath.append(event->position().toPoint());
-        // For shapes, we need a second point to start
         if (m_currentTool != Tool::Pen && m_currentTool != Tool::Eraser) {
             currentPath.append(event->position().toPoint());
         }
         update();
-    } else if (event->button() == Qt::MiddleButton) {
-        m_isAdjustingBrushSize = true;
     }
 }
 
@@ -103,7 +117,6 @@ void TransparentWidget::mouseMoveEvent(QMouseEvent *event)
         if (m_currentTool == Tool::Pen || m_currentTool == Tool::Eraser) {
             currentPath.append(event->position().toPoint());
         } else {
-            // For shapes, just update the second point for live preview
             currentPath[1] = event->position().toPoint();
         }
     }
@@ -121,7 +134,7 @@ void TransparentWidget::mouseReleaseEvent(QMouseEvent *event)
         }
         update();
     } else if (event->button() == Qt::MiddleButton) {
-        m_isAdjustingBrushSize = false;
+        cycleScrollMode();
     } else if (event->button() == Qt::RightButton) {
         m_rightClickTimer->start();
     }
@@ -129,12 +142,8 @@ void TransparentWidget::mouseReleaseEvent(QMouseEvent *event)
 
 void TransparentWidget::mouseDoubleClickEvent(QMouseEvent *event)
 {
-    if (event->button() == Qt::LeftButton) {
-        // Cycle through tools
-        m_currentTool = static_cast<Tool>((static_cast<int>(m_currentTool) + 1) % 5);
-        update(); // Update cursor to reflect new mode
-    } else if (event->button() == Qt::RightButton) {
-        m_rightClickTimer->stop(); // CRITICAL: Stop the timer before emitting the signal
+    if (event->button() == Qt::RightButton) {
+        m_rightClickTimer->stop();
         emit rightButtonDoubleClicked();
     } else if (event->button() == Qt::MiddleButton) {
         emit middleButtonDoubleClicked();
@@ -178,10 +187,9 @@ void TransparentWidget::paintEvent(QPaintEvent *event)
         }
     }
     
-    // Restore default composition mode for drawing the current path and cursor
     painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
-    // Draw the current path being drawn (live preview)
+    // Draw the current path being drawn
     if (drawing && currentPath.size() > 1) {
         QColor pathColor = (m_currentTool == Tool::Eraser) ? QColor(0, 0, 0, 0) : currentColor;
         QPen pen(pathColor, m_currentPenWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
@@ -211,8 +219,9 @@ void TransparentWidget::paintEvent(QPaintEvent *event)
         painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
     }
 
-    // Draw custom cursor
+    // Draw custom cursor and mode indicator
     if (mouseInside) {
+        // Draw cursor
         if (m_currentTool == Tool::Eraser) {
             painter.setPen(Qt::white);
             painter.setBrush(Qt::transparent);
@@ -225,20 +234,91 @@ void TransparentWidget::paintEvent(QPaintEvent *event)
             painter.setBrush(cursorBrush);
             painter.drawEllipse(cursorPos, m_currentPenWidth / 2, m_currentPenWidth / 2);
         }
+
+        // Draw mode indicator text if active
+        if (m_showIndicator) {
+            QTextDocument textDocument;
+            // Force the text color to white via HTML styling
+            QString htmlText = QString("<body style='color:white;'><b>%1</b>: %2</body>").arg(scrollModeToString(), m_indicatorSubText);
+            textDocument.setHtml(htmlText);
+            
+            QPoint textPos = cursorPos + QPoint(m_currentPenWidth / 2 + 15, m_currentPenWidth / 2 + 5);
+            
+            // Draw background rectangle
+            QRectF textRect(textPos, textDocument.documentLayout()->documentSize());
+            textRect.adjust(-5, -2, 5, 2); // Add some padding
+            painter.setBrush(QColor(0, 0, 0, 200));
+            painter.setPen(Qt::NoPen);
+            painter.drawRoundedRect(textRect, 5, 5);
+
+            // Draw text on top of the background
+            painter.save();
+            painter.translate(textPos);
+            textDocument.drawContents(&painter);
+            painter.restore();
+        }
     }
 }
 
 void TransparentWidget::wheelEvent(QWheelEvent *event)
 {
-    if (m_isAdjustingBrushSize) {
-        int delta = (event->angleDelta().y() > 0) ? -1 : 1;
-        m_currentPenWidth = std::clamp(m_currentPenWidth + delta, 1, 100);
-        update();
-    } else {
-        if (event->angleDelta().y() > 0) {
-            undo();
-        } else {
-            redo();
-        }
+    int delta = event->angleDelta().y();
+    if (delta == 0) return;
+
+    QString subText;
+    switch (m_scrollMode) {
+        case ScrollMode::BrushSize:
+            // Inverted: scroll up decreases, scroll down increases
+            m_currentPenWidth = std::clamp(m_currentPenWidth + (delta > 0 ? -1 : 1), 1, 100);
+            subText = QString("<i>%1</i>").arg(m_currentPenWidth);
+            break;
+        case ScrollMode::History:
+            // Not inverted: scroll up is undo, scroll down is redo
+            (delta > 0) ? undo() : redo();
+            return; 
+        case ScrollMode::ToolSwitch:
+            // Inverted: scroll up goes to previous tool, scroll down to next
+            int currentToolIndex = static_cast<int>(m_currentTool);
+            int nextToolIndex = (currentToolIndex + (delta > 0 ? -1 : 1) + 5) % 5;
+            setTool(static_cast<Tool>(nextToolIndex));
+            return;
     }
+    showIndicator(subText);
+    update();
+}
+
+void TransparentWidget::cycleScrollMode()
+{
+    m_scrollMode = static_cast<ScrollMode>((static_cast<int>(m_scrollMode) + 1) % 3);
+    showIndicator();
+}
+
+void TransparentWidget::showIndicator(const QString &subText)
+{
+    m_indicatorSubText = subText;
+    m_showIndicator = true;
+    m_indicatorTimer->start(); // Restart the timer
+    update();
+}
+
+QString TransparentWidget::scrollModeToString() const
+{
+    switch (m_scrollMode) {
+        case ScrollMode::History:   return "History";
+        case ScrollMode::BrushSize: return "Size";
+        case ScrollMode::ToolSwitch:return "Tool";
+    }
+    return "";
+}
+
+QString TransparentWidget::toolToString(Tool tool) const
+{
+    switch (tool) {
+        case Tool::Pen:       return "pen";
+        case Tool::Eraser:    return "eraser";
+        case Tool::Line:      return "line";
+        case Tool::Rectangle: return "rectangle";
+        case Tool::Circle:    return "circle";
+    }
+    return "";
 }
