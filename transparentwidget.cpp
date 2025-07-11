@@ -8,7 +8,7 @@
 TransparentWidget::TransparentWidget(QWidget *parent)
     : QWidget(parent), drawing(false), mouseInside(false),
       m_currentTool(Tool::Pen), m_scrollMode(ScrollMode::History),
-      m_currentPenWidth(5), currentColor(255, 255, 255, 128),
+      m_currentPenWidth(1), currentColor(255, 255, 255, 128),
       m_showIndicator(false)
 {
     setAttribute(Qt::WA_TranslucentBackground);
@@ -237,23 +237,30 @@ void TransparentWidget::paintEvent(QPaintEvent *event)
 
         // Draw mode indicator text if active
         if (m_showIndicator) {
-            QString text = scrollModeToString();
-            if (!m_indicatorSubText.isEmpty()) {
-                text += ": " + m_indicatorSubText;
-            }
+            QString mainText = scrollModeToString();
             
             QPoint textPos = cursorPos + QPoint(m_currentPenWidth / 2 + 15, m_currentPenWidth / 2 + 15);
             
             // Draw outline
             painter.setPen(Qt::black);
-            painter.drawText(textPos + QPoint(1, 1), text);
-            painter.drawText(textPos + QPoint(-1, -1), text);
-            painter.drawText(textPos + QPoint(1, -1), text);
-            painter.drawText(textPos + QPoint(-1, 1), text);
+            painter.drawText(textPos + QPoint(1, 1), mainText);
+            painter.drawText(textPos + QPoint(-1, -1), mainText);
+            painter.drawText(textPos + QPoint(1, -1), mainText);
+            painter.drawText(textPos + QPoint(-1, 1), mainText);
+            if (!m_indicatorSubText.isEmpty()) {
+                QPoint subTextPos = textPos + QPoint(0, 18);
+                painter.drawText(subTextPos + QPoint(1, 1), m_indicatorSubText);
+                painter.drawText(subTextPos + QPoint(-1, -1), m_indicatorSubText);
+                painter.drawText(subTextPos + QPoint(1, -1), m_indicatorSubText);
+                painter.drawText(subTextPos + QPoint(-1, 1), m_indicatorSubText);
+            }
 
             // Draw text
             painter.setPen(Qt::white);
-            painter.drawText(textPos, text);
+            painter.drawText(textPos, mainText);
+            if (!m_indicatorSubText.isEmpty()) {
+                painter.drawText(textPos + QPoint(0, 18), m_indicatorSubText);
+            }
         }
     }
 }
@@ -263,47 +270,56 @@ void TransparentWidget::wheelEvent(QWheelEvent *event)
     int delta = event->angleDelta().y();
     if (delta == 0) return;
 
-    QString subText;
+    int h, s, v;
+    
     switch (m_scrollMode) {
-        case ScrollMode::Color: {
-            int hue, saturation, value;
-            currentColor.getHsv(&hue, &saturation, &value);
-            // Adjust hue, wrapping around at 0 and 359
-            hue = (hue + (delta > 0 ? -5 : 5) + 360) % 360;
-            currentColor.setHsv(hue, 255, 255);
-            subText = QString("H: %1").arg(hue);
+        case ScrollMode::Hue:
+        case ScrollMode::Saturation:
+        case ScrollMode::Value:
+            currentColor.getHsv(&h, &s, &v);
+            if (m_scrollMode == ScrollMode::Hue) {
+                h = (h + (delta > 0 ? -5 : 5) + 360) % 360;
+            } else if (m_scrollMode == ScrollMode::Saturation) {
+                s = std::clamp(s + (delta > 0 ? -5 : 5), 0, 255);
+            } else { // Value
+                v = std::clamp(v + (delta > 0 ? -5 : 5), 0, 255);
+            }
+            currentColor.setHsv(h, s, v);
             emit penColorChanged(currentColor);
+            showIndicator();
             break;
-        }
         case ScrollMode::BrushSize:
-            // Inverted: scroll up decreases, scroll down increases
-            m_currentPenWidth = std::clamp(m_currentPenWidth + (delta > 0 ? -1 : 1), 1, 100);
-            subText = QString("%1").arg(m_currentPenWidth);
+            m_currentPenWidth = std::max(1, m_currentPenWidth + (delta > 0 ? -1 : 1));
+            showIndicator(QString("%1px").arg(m_currentPenWidth));
             break;
         case ScrollMode::History:
-            // Not inverted: scroll up is undo, scroll down is redo
             (delta > 0) ? undo() : redo();
             return; 
         case ScrollMode::ToolSwitch:
-            // Inverted: scroll up goes to previous tool, scroll down to next
             int currentToolIndex = static_cast<int>(m_currentTool);
             int nextToolIndex = (currentToolIndex + (delta > 0 ? -1 : 1) + 5) % 5;
             setTool(static_cast<Tool>(nextToolIndex));
             return;
     }
-    showIndicator(subText);
     update();
 }
 
 void TransparentWidget::cycleScrollMode()
 {
-    m_scrollMode = static_cast<ScrollMode>((static_cast<int>(m_scrollMode) + 1) % 4);
+    m_scrollMode = static_cast<ScrollMode>((static_cast<int>(m_scrollMode) + 1) % 6);
     showIndicator();
 }
 
 void TransparentWidget::showIndicator(const QString &subText)
 {
-    m_indicatorSubText = subText;
+    if (m_scrollMode == ScrollMode::Hue || m_scrollMode == ScrollMode::Saturation || m_scrollMode == ScrollMode::Value) {
+        int h, s, v;
+        currentColor.getHsv(&h, &s, &v);
+        m_indicatorSubText = QString::asprintf("H:%.2f S:%.2f V:%.2f", h / 359.0, s / 255.0, v / 255.0);
+    } else {
+        m_indicatorSubText = subText;
+    }
+
     m_showIndicator = true;
     m_indicatorTimer->start(); // Restart the timer
     update();
@@ -312,10 +328,12 @@ void TransparentWidget::showIndicator(const QString &subText)
 QString TransparentWidget::scrollModeToString() const
 {
     switch (m_scrollMode) {
-        case ScrollMode::History:   return "History";
-        case ScrollMode::Color:     return "Color";
-        case ScrollMode::BrushSize: return "Size";
-        case ScrollMode::ToolSwitch:return "Tool";
+        case ScrollMode::History:    return "History";
+        case ScrollMode::Hue:        return "Hue";
+        case ScrollMode::Saturation: return "Saturation";
+        case ScrollMode::Value:      return "Value";
+        case ScrollMode::BrushSize:  return "Size";
+        case ScrollMode::ToolSwitch: return "Tool";
     }
     return "";
 }

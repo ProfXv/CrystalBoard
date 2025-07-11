@@ -25,7 +25,9 @@ enum class Tool {
 // Define the modes for the scroll wheel in the desired order
 enum class ScrollMode {
     History,
-    Color,
+    Hue,
+    Saturation,
+    Value,
     BrushSize,
     ToolSwitch
 };

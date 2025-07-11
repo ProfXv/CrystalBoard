@@ -38,17 +38,17 @@ MainWindow::MainWindow(QWidget *parent)
     connect(drawingWidget, &TransparentWidget::rightButtonClicked,
             drawingWidget, &TransparentWidget::clearCanvas);
 
-    // 3. Right-double-click on drawing widget toggles the color picker view
-    connect(drawingWidget, &TransparentWidget::rightButtonDoubleClicked,
+    // 3. Middle-double-click on drawing widget toggles the color picker view
+    connect(drawingWidget, &TransparentWidget::middleButtonDoubleClicked,
             this, &MainWindow::toggleColorPicker);
+
+    // 4. Right-double-click on drawing widget closes the application
+    connect(drawingWidget, &TransparentWidget::rightButtonDoubleClicked,
+            this, &MainWindow::close);
             
-    // 4. When a tool is selected in picker, update drawing widget's tool
+    // 5. When a tool is selected in picker, update drawing widget's tool
     connect(colorPickerWidget, &ColorPickerWidget::toolSelected,
             drawingWidget, &TransparentWidget::setTool);
-
-    // 5. Middle-double-click on drawing widget closes the application
-    connect(drawingWidget, &TransparentWidget::middleButtonDoubleClicked,
-            this, &MainWindow::close);
 
     // Set initial color for both widgets
     QColor initialColor;
@@ -83,11 +83,11 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
     // Global event filter to handle closing from the color picker view
     if (obj == colorPickerWidget && event->type() == QEvent::MouseButtonDblClick) {
         QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
-        if (mouseEvent->button() == Qt::RightButton) {
+        if (mouseEvent->button() == Qt::MiddleButton) {
             toggleColorPicker();
             return true; // Event is handled
         }
-        if (mouseEvent->button() == Qt::MiddleButton) {
+        if (mouseEvent->button() == Qt::RightButton) {
             close();
             return true; // Event is handled
         }

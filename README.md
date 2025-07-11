@@ -1,92 +1,68 @@
 # 🔮 CrystalBoard 🎨
 
-**A crystal-clear, transparent canvas that floats above your desktop.**
+A crystal-clear, transparent canvas that floats above your desktop. CrystalBoard is a minimalist tool for quick sketches, notes, and annotations directly on your screen, designed to be intuitive and integrate seamlessly into your workflow with mouse-only controls.
 
-CrystalBoard is a simple yet elegant desktop application that provides a transparent drawing surface, allowing you to sketch, annotate, or doodle over any of your open windows. It's built with C++ and the Qt framework for a lightweight and responsive experience.
+## ✨ Features
 
-## Features
+- **Transparent Overlay**: Draw on a borderless, transparent window that floats over your other applications.
+- **Mouse-Only Operation**: Designed from the ground up to be controlled entirely with a 3-button mouse and scroll wheel.
+- **Scroll-Wheel Mode System**: Effortlessly cycle through tools and settings without moving your cursor.
+- **On-the-Fly Adjustments**: Dynamically change color (Hue, Saturation, Value) and brush size.
+- **Live Cursor Preview**: The cursor instantly reflects the current brush size and color.
+- **Mode Indicator**: A temporary text indicator appears next to the cursor to show the current scroll mode and action.
+- **Minimalist Settings Panel**: A clean, centered help panel that provides keybindings and stays out of the way.
 
-### Core Functionality
-- **Transparent Canvas**: The main window is fully transparent, letting you see everything on your desktop underneath.
-- **Versatile Drawing Tools**: Pen, Eraser, Line, Rectangle, and Circle.
-- **Rich Color Picker**: A dedicated widget with RGB sliders allows for precise color selection.
-- **Tool Selection Bar**: Quickly switch between available drawing tools from within the color picker view.
+## 🖱️ Controls
 
-### Advanced Interaction Model
-CrystalBoard uses a mode-based system for the mouse scroll wheel to provide powerful, context-aware controls without cluttering the interface.
+CrystalBoard is designed for efficiency. Here are all the controls:
 
-- **Click Middle Button**: Cycles through the three available scroll modes:
-    1.  **History Mode**: Scroll to Undo/Redo actions.
-    2.  **Size Mode**: Scroll to adjust the brush/shape size.
-    3.  **Tool Mode**: Scroll to switch between drawing tools.
-- **Visual Feedback**: A temporary indicator appears next to the cursor, showing the current mode and the specific action being performed (e.g., "Size: 15", "Pen").
+| Action                 | Left Button        | Middle Button          | Right Button         | Scroll Wheel                               |
+| ---------------------- | ------------------ | ---------------------- | -------------------- | ------------------------------------------ |
+| **Click**              | *Drag* to draw     | Cycle Scroll Mode      | Clear entire canvas  | Use active mode                            |
+| **Double-Click**       | -                  | Toggle Settings Panel  | **Exit Application** | -                                          |
 
-### All Controls
+**Scroll Modes (Cycled by Middle-Click):**
+1.  **History**: Undo / Redo
+2.  **Hue**: Adjust color's hue
+3.  **Saturation**: Adjust color's saturation
+4.  **Value**: Adjust color's brightness
+5.  **Size**: Adjust brush/eraser size
+6.  **Tool**: Switch between Pen, Eraser, Line, Rectangle, and Circle
 
-| Button | Action | Effect |
-| :--- | :--- | :--- |
-| **Left** | Click + Drag | Draw with the current tool. |
-| **Middle** | Click | Cycle through scroll modes (History, Size, Tool). |
-| | Double-click | **Exit the application.** |
-| | Scroll | Use the currently active scroll mode. |
-| **Right** | Click | Clear the entire canvas. |
-| | Double-click | Toggle the Color Picker / Settings view. |
-| **Keyboard**| `Esc` Key | Exit the application. |
+**Keyboard:**
+- `ESC`: **Exit Application**
 
+## 🛠️ Building from Source
 
-## Tech Stack
-- **C++20**
-- **Qt 6**
-- **CMake**
-
-## How to Build and Run
-
-### Prerequisites
-- A modern C++ compiler (GCC, Clang, MSVC)
-- CMake (>= 3.16)
-- Qt 6 (Core, GUI, Widgets)
+### Dependencies
+- C++ Compiler (g++, clang++)
+- CMake (version 3.5 or higher)
+- Qt (version 6.x)
 
 ### Build Steps
-```bash
-# 1. Clone the repository
-# git clone <repository-url>
-# cd CrystalBoard
 
-# 2. Create and navigate to the build directory
-mkdir -p build && cd build
+1.  Clone the repository:
+    ```bash
+    git clone https://github.com/your-username/CrystalBoard.git
+    cd CrystalBoard
+    ```
 
-# 3. Configure the project with CMake
-cmake ..
+2.  Create a build directory:
+    ```bash
+    mkdir build && cd build
+    ```
 
-# 4. Compile the source code
-make
-```
+3.  Run CMake and Make:
+    ```bash
+    cmake ..
+    make
+    ```
 
-### Installation (Optional)
-To make the `CrystalBoard` command available system-wide, you can copy the compiled binary to a directory in your system's `PATH`. A common choice is `~/.local/bin`.
+4.  Run the application:
+    ```bash
+    ./CrystalBoard
+    ```
 
-```bash
-# This command assumes you are in the project's root directory
-cp CrystalBoard ~/.local/bin/
-```
+## 📄 License
 
-### Run the Application
-After a successful build, the executable will be located in the project's root directory. If you've performed the installation step, you can run it from anywhere.
-```bash
-# From the project root
-./CrystalBoard
-
-# Or from anywhere, if installed
-CrystalBoard
-```
-
-## Contributing
-This project is shared as-is, and active maintenance is not guaranteed. However, you are welcome to fork the repository and experiment. If you find a bug, you can open an issue to report it.
-
-## Usage Example: Hyprland Integration
-For users of the Hyprland window manager, a detailed guide on how to integrate CrystalBoard with keyboard shortcuts and window rules is available.
-
-➡️ **[View Hyprland Integration Guide](./docs/HYPRLAND_INTEGRATION.md)**
-
-## License
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

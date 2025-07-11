@@ -7,21 +7,25 @@
 
 ColorPickerWidget::ColorPickerWidget(QWidget *parent) : QWidget(parent), currentColor(255, 255, 255, 128)
 {
-    setAttribute(Qt::WA_TranslucentBackground, false);
-    setAutoFillBackground(true);
+    setAttribute(Qt::WA_TranslucentBackground, true);
+    setAutoFillBackground(false);
 
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(50, 50, 50, 50);
-    mainLayout->setSpacing(20);
+    // Create a horizontal layout to center the vertical layout
+    QHBoxLayout *hLayout = new QHBoxLayout(this);
+    hLayout->addStretch(1);
 
-    mainLayout->addStretch(1);
+    // Vertical layout for the help label itself
+    QVBoxLayout *vLayout = new QVBoxLayout();
+    vLayout->setContentsMargins(0, 0, 0, 0); // No margins for the inner layout
+    vLayout->setSpacing(20);
+    vLayout->addStretch(1);
 
     // --- Help Panel ---
     helpLabel = new QLabel(this);
     const QString helpTextStyle =
         "background-color: black;"
         "color: white;"
-        "padding: 15px;"
+        "padding: 25px;" // Increased padding for better aesthetics
         "font-size: 22px;"
         "border-radius: 10px;";
     const QString helpText =
@@ -49,8 +53,8 @@ ColorPickerWidget::ColorPickerWidget(QWidget *parent) : QWidget(parent), current
         "    <tr>"
         "      <th style='padding: 10px; text-align: right;'>Double-click</th>"
         "      <td style='padding: 10px; text-align: center;'></td>"
-        "      <td style='padding: 10px; text-align: center;'>exit app</td>"
         "      <td style='padding: 10px; text-align: center;'>toggle view</td>"
+        "      <td style='padding: 10px; text-align: center;'>exit app</td>"
         "    </tr>"
         "  </tbody>"
         "</table>"
@@ -59,26 +63,30 @@ ColorPickerWidget::ColorPickerWidget(QWidget *parent) : QWidget(parent), current
     helpLabel->setText(helpText);
     helpLabel->setStyleSheet(helpTextStyle);
     helpLabel->setAlignment(Qt::AlignCenter);
-    mainLayout->addWidget(helpLabel);
+    vLayout->addWidget(helpLabel);
 
-    mainLayout->addStretch(1);
+    vLayout->addStretch(1);
 
-    setLayout(mainLayout);
+    // Add the vertical layout to the horizontal layout
+    hLayout->addLayout(vLayout);
+    hLayout->addStretch(1);
+
+    setLayout(hLayout);
     onPenColorChanged(QColor(0, 255, 255, 128)); // Set initial color (cyan)
 }
 
 void ColorPickerWidget::onPenColorChanged(const QColor &color)
 {
     currentColor = color;
-    update(); // Trigger paintEvent to update background
+    // No need to call update() anymore as the background is transparent
     emit colorChanged(currentColor);
 }
 
 void ColorPickerWidget::paintEvent(QPaintEvent *event)
 {
+    // This is now intentionally left empty to keep the widget background transparent.
+    // The helpLabel's stylesheet handles its own black background.
     Q_UNUSED(event);
-    QPainter painter(this);
-    painter.fillRect(rect(), Qt::black);
 }
 
 QColor ColorPickerWidget::getCurrentColor() const
