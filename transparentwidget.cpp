@@ -265,6 +265,16 @@ void TransparentWidget::wheelEvent(QWheelEvent *event)
 
     QString subText;
     switch (m_scrollMode) {
+        case ScrollMode::Color: {
+            int hue, saturation, value;
+            currentColor.getHsv(&hue, &saturation, &value);
+            // Adjust hue, wrapping around at 0 and 359
+            hue = (hue + (delta > 0 ? -5 : 5) + 360) % 360;
+            currentColor.setHsv(hue, 255, 255);
+            subText = QString("H: %1").arg(hue);
+            emit penColorChanged(currentColor);
+            break;
+        }
         case ScrollMode::BrushSize:
             // Inverted: scroll up decreases, scroll down increases
             m_currentPenWidth = std::clamp(m_currentPenWidth + (delta > 0 ? -1 : 1), 1, 100);
@@ -287,7 +297,7 @@ void TransparentWidget::wheelEvent(QWheelEvent *event)
 
 void TransparentWidget::cycleScrollMode()
 {
-    m_scrollMode = static_cast<ScrollMode>((static_cast<int>(m_scrollMode) + 1) % 3);
+    m_scrollMode = static_cast<ScrollMode>((static_cast<int>(m_scrollMode) + 1) % 4);
     showIndicator();
 }
 
@@ -303,6 +313,7 @@ QString TransparentWidget::scrollModeToString() const
 {
     switch (m_scrollMode) {
         case ScrollMode::History:   return "History";
+        case ScrollMode::Color:     return "Color";
         case ScrollMode::BrushSize: return "Size";
         case ScrollMode::ToolSwitch:return "Tool";
     }

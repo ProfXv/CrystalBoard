@@ -17,6 +17,9 @@ public:
     explicit ColorPickerWidget(QWidget *parent = nullptr);
     QColor getCurrentColor() const;
 
+public slots:
+    void onPenColorChanged(const QColor &color);
+
 signals:
     void colorChanged(const QColor &color);
     void toolSelected(Tool tool);
@@ -24,32 +27,8 @@ signals:
 protected:
     void paintEvent(QPaintEvent *event) override;
 
-private slots:
-    void updateColor();
-    void incrementRed();
-    void decrementRed();
-    void incrementGreen();
-    void decrementGreen();
-    void incrementBlue();
-    void decrementBlue();
-
 private:
-    void setupSlider(QSlider *slider);
-    void updateRgbLabel();
-
     QLabel *helpLabel;
-    QSlider *redSlider;
-    QSlider *greenSlider;
-    QSlider *blueSlider;
-
-    QPushButton *redMinusButton;
-    QPushButton *redPlusButton;
-    QPushButton *greenMinusButton;
-    QPushButton *greenPlusButton;
-    QPushButton *blueMinusButton;
-    QPushButton *bluePlusButton;
-    
-    QLabel *rgbLabel;
     QColor currentColor;
 };
 

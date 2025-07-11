@@ -29,6 +29,10 @@ MainWindow::MainWindow(QWidget *parent)
     // 1. When color is changed in picker, update drawing widget's pen
     connect(colorPickerWidget, &ColorPickerWidget::colorChanged,
             drawingWidget, &TransparentWidget::setPenColor);
+
+    // 1b. When color is changed by wheel, update picker's display
+    connect(drawingWidget, &TransparentWidget::penColorChanged,
+            colorPickerWidget, &ColorPickerWidget::onPenColorChanged);
             
     // 2. Right-click on drawing widget clears the canvas
     connect(drawingWidget, &TransparentWidget::rightButtonClicked,
@@ -46,8 +50,12 @@ MainWindow::MainWindow(QWidget *parent)
     connect(drawingWidget, &TransparentWidget::middleButtonDoubleClicked,
             this, &MainWindow::close);
 
-    // Set initial color
-    drawingWidget->setPenColor(colorPickerWidget->getCurrentColor());
+    // Set initial color for both widgets
+    QColor initialColor;
+    initialColor.setHsv(0, 255, 255); // Start with Red
+    initialColor.setAlpha(128);
+    drawingWidget->setPenColor(initialColor);
+    colorPickerWidget->onPenColorChanged(initialColor);
 }
 
 MainWindow::~MainWindow()

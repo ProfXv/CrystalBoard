@@ -25,6 +25,7 @@ enum class Tool {
 // Define the modes for the scroll wheel in the desired order
 enum class ScrollMode {
     History,
+    Color,
     BrushSize,
     ToolSwitch
 };
@@ -46,6 +47,7 @@ public:
     ~TransparentWidget();
 
 signals:
+    void penColorChanged(const QColor &color);
     void rightButtonClicked();
     void rightButtonDoubleClicked();
     void middleButtonDoubleClicked();
