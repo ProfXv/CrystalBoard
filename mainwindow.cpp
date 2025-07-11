@@ -38,8 +38,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(canvas, &Canvas::rightButtonClicked,
             canvas, &Canvas::clearCanvas);
 
-    // 3. Middle-double-click on drawing widget toggles the color picker view
-    connect(canvas, &Canvas::middleButtonDoubleClicked,
+    // 3. Left-double-click on drawing widget toggles the help panel view
+    connect(canvas, &Canvas::leftButtonDoubleClicked,
             this, &MainWindow::toggleHelpPanel);
 
     // 4. Right-double-click on drawing widget closes the application
@@ -80,10 +80,10 @@ void MainWindow::toggleHelpPanel()
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
-    // Global event filter to handle closing from the color picker view
+    // Global event filter to handle events on the help panel
     if (obj == helpPanel && event->type() == QEvent::MouseButtonDblClick) {
         QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
-        if (mouseEvent->button() == Qt::MiddleButton) {
+        if (mouseEvent->button() == Qt::LeftButton) {
             toggleHelpPanel();
             return true; // Event is handled
         }

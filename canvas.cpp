@@ -3,13 +3,13 @@
 #include <QApplication>
 #include <QPainterPath>
 #include <QTextDocument>
-#include <QAbstractTextDocumentLayout>
+#include <QLineEdit>
 
 Canvas::Canvas(QWidget *parent)
     : QWidget(parent), drawing(false), mouseInside(false),
       m_currentTool(Tool::Pen), m_scrollMode(ScrollMode::History),
       m_currentPenWidth(1), currentColor(255, 255, 255, 128),
-      m_showIndicator(false)
+      m_showIndicator(false), m_textInput(nullptr)
 {
     setAttribute(Qt::WA_TranslucentBackground);
     setMouseTracking(true);
@@ -65,7 +65,41 @@ void Canvas::clearCanvas()
 {
     paths.clear();
     undonePaths.clear();
+    if (m_textInput) {
+        m_textInput->deleteLater();
+        m_textInput = nullptr;
+    }
     update();
+}
+
+void Canvas::handleTextEditingFinished()
+{
+    if (!m_textInput) return;
+
+    QString text = m_textInput->text();
+    
+    // Use the initial click position as the center reference
+    QPoint centerPos = m_textClickPos;
+    
+    m_textInput->deleteLater();
+    m_textInput = nullptr;
+
+    if (!text.isEmpty()) {
+        // Prepare to calculate text size for centering
+        QFont font;
+        font.setPointSize(m_currentPenWidth + 10);
+        QFontMetrics fm(font);
+        
+        // Calculate the bounding box of the text
+        QRect textRect = fm.boundingRect(text);
+        
+        // Calculate the top-left position to make the text's center align with centerPos
+        QPoint topLeftPos = centerPos - textRect.center();
+
+        undonePaths.clear();
+        paths.append({ {topLeftPos}, currentColor, m_currentPenWidth, Tool::Text, text });
+        update();
+    }
 }
 
 void Canvas::onRightClickTimeout()
@@ -99,14 +133,42 @@ void Canvas::leaveEvent(QEvent *event)
 void Canvas::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton) {
-        drawing = true;
-        undonePaths.clear();
-        currentPath.clear();
-        currentPath.append(event->position().toPoint());
-        if (m_currentTool != Tool::Pen && m_currentTool != Tool::Eraser) {
-            currentPath.append(event->position().toPoint());
+        // If an input box already exists, finalize it before doing anything else.
+        if (m_textInput) {
+            handleTextEditingFinished();
         }
-        update();
+
+        if (m_currentTool == Tool::Text) {
+            m_textClickPos = event->position().toPoint();
+            m_textInput = new QLineEdit(this);
+            connect(m_textInput, &QLineEdit::editingFinished, this, &Canvas::handleTextEditingFinished);
+            
+            QFont font;
+            font.setPointSize(m_currentPenWidth + 10);
+            m_textInput->setFont(font);
+            
+            m_textInput->setStyleSheet(
+                "background-color: rgba(0, 0, 0, 0.5);"
+                "color: white;"
+                "border: 1px solid white;"
+                "border-radius: 3px;"
+                "padding: 2px;"
+            );
+            
+            m_textInput->move(m_textClickPos);
+            m_textInput->show();
+            m_textInput->setFocus();
+        } else {
+            drawing = true;
+            undonePaths.clear();
+            currentPath.clear();
+            currentPath.append(event->position().toPoint());
+            // For shape tools, add a second point to be modified during mouse move.
+            if (m_currentTool == Tool::Line || m_currentTool == Tool::Rectangle || m_currentTool == Tool::Circle) {
+                currentPath.append(event->position().toPoint());
+            }
+            update();
+        }
     }
 }
 
@@ -142,7 +204,18 @@ void Canvas::mouseReleaseEvent(QMouseEvent *event)
 
 void Canvas::mouseDoubleClickEvent(QMouseEvent *event)
 {
-    if (event->button() == Qt::RightButton) {
+    if (event->button() == Qt::LeftButton) {
+        if (m_currentTool == Tool::Text) return;
+        
+        // A double-click is preceded by a press and release, which creates a "dot".
+        // We remove that dot before toggling the view.
+        if (!paths.isEmpty()) {
+            paths.removeLast();
+            update();
+        }
+        
+        emit leftButtonDoubleClicked();
+    } else if (event->button() == Qt::RightButton) {
         m_rightClickTimer->stop();
         emit rightButtonDoubleClicked();
     } else if (event->button() == Qt::MiddleButton) {
@@ -168,20 +241,34 @@ void Canvas::paintEvent(QPaintEvent *event)
             painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
         }
 
-        if (pathData.points.size() > 1) {
+        if (pathData.points.size() > 0) {
             switch (pathData.tool) {
                 case Tool::Pen:
                 case Tool::Eraser:
-                    painter.drawPolyline(pathData.points.constData(), pathData.points.size());
+                    if (pathData.points.size() > 1)
+                        painter.drawPolyline(pathData.points.constData(), pathData.points.size());
                     break;
                 case Tool::Line:
-                    painter.drawLine(pathData.points.first(), pathData.points.last());
+                    if (pathData.points.size() > 1)
+                        painter.drawLine(pathData.points.first(), pathData.points.last());
                     break;
                 case Tool::Rectangle:
-                    painter.drawRect(QRect(pathData.points.first(), pathData.points.last()));
+                     if (pathData.points.size() > 1)
+                        painter.drawRect(QRect(pathData.points.first(), pathData.points.last()));
                     break;
                 case Tool::Circle:
-                    painter.drawEllipse(QRect(pathData.points.first(), pathData.points.last()));
+                     if (pathData.points.size() > 1)
+                        painter.drawEllipse(QRect(pathData.points.first(), pathData.points.last()));
+                    break;
+                case Tool::Text:
+                    {
+                        painter.save();
+                        QFont font = painter.font();
+                        font.setPointSize(pathData.penWidth + 10); // Use penWidth to control font size
+                        painter.setFont(font);
+                        painter.drawText(pathData.points.first(), pathData.text);
+                        painter.restore();
+                    }
                     break;
             }
         }
@@ -213,6 +300,9 @@ void Canvas::paintEvent(QPaintEvent *event)
                 break;
             case Tool::Circle:
                 painter.drawEllipse(QRect(currentPath.first(), currentPath.last()));
+                break;
+            case Tool::Text:
+                // Text is drawn directly, not interactively
                 break;
         }
         
@@ -297,7 +387,7 @@ void Canvas::wheelEvent(QWheelEvent *event)
             return; 
         case ScrollMode::ToolSwitch:
             int currentToolIndex = static_cast<int>(m_currentTool);
-            int nextToolIndex = (currentToolIndex + (delta > 0 ? -1 : 1) + 5) % 5;
+            int nextToolIndex = (currentToolIndex + (delta > 0 ? -1 : 1) + 6) % 6;
             setTool(static_cast<Tool>(nextToolIndex));
             return;
     }
@@ -343,6 +433,7 @@ QString Canvas::toolToString(Tool tool) const
     switch (tool) {
         case Tool::Pen:       return "pen";
         case Tool::Eraser:    return "eraser";
+        case Tool::Text:      return "text";
         case Tool::Line:      return "line";
         case Tool::Rectangle: return "rectangle";
         case Tool::Circle:    return "circle";

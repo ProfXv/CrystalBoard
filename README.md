@@ -19,15 +19,15 @@ CrystalBoard is designed for efficiency. Here are all the controls:
 | Action                 | Left Button        | Middle Button          | Right Button         | Scroll Wheel                               |
 | ---------------------- | ------------------ | ---------------------- | -------------------- | ------------------------------------------ |
 | **Click**              | *Drag* to draw     | Cycle Scroll Mode      | Clear entire canvas  | Use active mode                            |
-| **Double-Click**       | -                  | Toggle Settings Panel  | **Exit Application** | -                                          |
+| **Double-Click**       | Toggle Help Panel  | -                      | **Exit Application** | -                                          |
 
 **Scroll Modes (Cycled by Middle-Click):**
 1.  **History**: Undo / Redo
 2.  **Hue**: Adjust color's hue
 3.  **Saturation**: Adjust color's saturation
-4.  **Value**: Adjust color's brightness
-5.  **Size**: Adjust brush/eraser size
-6.  **Tool**: Switch between Pen, Eraser, Line, Rectangle, and Circle
+4.  **Brightness**: Adjust color's brightness
+5.  **Size**: Adjust brush/eraser/font size
+6.  **Tool**: Switch between Pen, Eraser, Text, Line, Rectangle, and Circle
 
 **Keyboard:**
 - `ESC`: **Exit Application**

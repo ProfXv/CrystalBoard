@@ -9,6 +9,7 @@
 #include <QPainter>
 #include <QVector>
 #include <QColor>
+#include <QLineEdit>
 #include <QTimer>
 #include <algorithm> // For std::clamp
 #include <cmath> // For std::atan2, std::cos, std::sin
@@ -17,6 +18,7 @@
 enum class Tool {
     Pen,
     Eraser,
+    Text,
     Line,
     Rectangle,
     Circle
@@ -38,6 +40,7 @@ struct PathData {
     QColor color;
     int penWidth;
     Tool tool;
+    QString text;
 };
 
 class Canvas : public QWidget
@@ -49,10 +52,11 @@ public:
     ~Canvas();
 
 signals:
-    void penColorChanged(const QColor &color);
+    void leftButtonDoubleClicked();
     void rightButtonClicked();
     void rightButtonDoubleClicked();
     void middleButtonDoubleClicked();
+    void penColorChanged(const QColor &color);
 
 public slots:
     void setPenColor(const QColor &color);
@@ -72,6 +76,7 @@ protected:
     void leaveEvent(QEvent *event) override;
 
 private slots:
+    void handleTextEditingFinished();
     void onRightClickTimeout();
     void hideModeIndicator();
 
@@ -92,6 +97,8 @@ private:
     QVector<PathData> paths;
     QVector<PathData> undonePaths;
     
+    QLineEdit *m_textInput;
+    QPoint m_textClickPos;
     QTimer *m_rightClickTimer;
     QTimer *m_indicatorTimer;
     bool m_showIndicator;
