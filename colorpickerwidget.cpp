@@ -23,13 +23,20 @@ ColorPickerWidget::ColorPickerWidget(QWidget *parent) : QWidget(parent), current
         "font-size: 16px;"
         "border-radius: 10px;";
     const QString helpText =
-        "<b>Left-click + Drag:</b> Draw<br>"
-        "<b>Double-click Left:</b> Cycle Tools<br>"
-        "<b>Right-click:</b> Clear Canvas<br>"
-        "<b>Double-click Right:</b> Toggle This View<br>"
-        "<b>Middle-click + Scroll:</b> Adjust Size<br>"
-        "<b>Scroll Wheel:</b> Undo/Redo<br>"
-        "<b>Esc Key:</b> Exit";
+        "<div align='center'>"
+        "<h1>CrystalBoard 🔮</h1>"
+        "<p><i>A crystal-clear, transparent canvas that floats above your desktop.</i></p>"
+        "</div>"
+        "<table style='width:100%; margin-top: 15px;'>"
+        "<tr><td style='text-align: left;'><b>Left-click + Drag</b></td><td style='text-align: left;'>Draw with the selected tool</td></tr>"
+        "<tr><td style='text-align: left;'><b>Double-click Left</b></td><td style='text-align: left;'>Cycle through available tools</td></tr>"
+        "<tr><td style='text-align: left;'><b>Right-click</b></td><td style='text-align: left;'>Clear the entire canvas</td></tr>"
+        "<tr><td style='text-align: left;'><b>Double-click Right</b></td><td style='text-align: left;'>Toggle this settings view</td></tr>"
+        "<tr><td style='text-align: left;'><b>Middle-click</b></td><td style='text-align: left;'><b>Exit the application</b></td></tr>"
+        "<tr><td style='text-align: left;'><b>Middle-click + Scroll</b></td><td style='text-align: left;'>Adjust brush/shape size</td></tr>"
+        "<tr><td style='text-align: left;'><b>Scroll Wheel</b></td><td style='text-align: left;'>Undo / Redo</td></tr>"
+        "<tr><td style='text-align: left;'><b>ESC Key</b></td><td style='text-align: left;'>Close the application</td></tr>"
+        "</table>";
     helpLabel->setText(helpText);
     helpLabel->setStyleSheet(helpTextStyle);
     helpLabel->setAlignment(Qt::AlignCenter);

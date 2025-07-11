@@ -42,6 +42,10 @@ MainWindow::MainWindow(QWidget *parent)
     connect(colorPickerWidget, &ColorPickerWidget::toolSelected,
             drawingWidget, &TransparentWidget::setTool);
 
+    // 5. Middle-click on drawing widget closes the application
+    connect(drawingWidget, &TransparentWidget::middleButtonClicked,
+            this, &MainWindow::close);
+
     // Set initial color
     drawingWidget->setPenColor(colorPickerWidget->getCurrentColor());
 }
