@@ -21,7 +21,7 @@ MainWindow::MainWindow(QWidget *parent)
     stackedWidget->addWidget(drawingWidget);
     stackedWidget->addWidget(colorPickerWidget);
 
-    // The color picker doesn't emit signals, so we must filter its events
+    // Install event filter on the color picker to catch global mouse events
     colorPickerWidget->installEventFilter(this);
 
     // --- Connect Signals and Slots ---
@@ -42,8 +42,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(colorPickerWidget, &ColorPickerWidget::toolSelected,
             drawingWidget, &TransparentWidget::setTool);
 
-    // 5. Middle-click on drawing widget closes the application
-    connect(drawingWidget, &TransparentWidget::middleButtonClicked,
+    // 5. Middle-double-click on drawing widget closes the application
+    connect(drawingWidget, &TransparentWidget::middleButtonDoubleClicked,
             this, &MainWindow::close);
 
     // Set initial color
@@ -72,12 +72,15 @@ void MainWindow::toggleColorPicker()
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
-    // This filter now ONLY handles events for the color picker,
-    // because the drawing widget handles its own clicks and emits signals.
+    // Global event filter to handle closing from the color picker view
     if (obj == colorPickerWidget && event->type() == QEvent::MouseButtonDblClick) {
         QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
         if (mouseEvent->button() == Qt::RightButton) {
             toggleColorPicker();
+            return true; // Event is handled
+        }
+        if (mouseEvent->button() == Qt::MiddleButton) {
+            close();
             return true; // Event is handled
         }
     }

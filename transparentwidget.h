@@ -41,7 +41,7 @@ public:
 signals:
     void rightButtonClicked();
     void rightButtonDoubleClicked();
-    void middleButtonClicked();
+    void middleButtonDoubleClicked();
 
 public slots:
     void setPenColor(const QColor &color);
@@ -67,7 +67,6 @@ private:
     bool drawing;
     bool mouseInside;
     bool m_isAdjustingBrushSize;
-    bool m_brushWasAdjusted;
     Tool m_currentTool;
     int m_currentPenWidth;
     QPoint cursorPos;

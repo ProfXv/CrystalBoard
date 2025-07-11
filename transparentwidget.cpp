@@ -4,7 +4,7 @@
 
 TransparentWidget::TransparentWidget(QWidget *parent)
     : QWidget(parent), drawing(false), mouseInside(false), m_isAdjustingBrushSize(false),
-      m_brushWasAdjusted(false), m_currentTool(Tool::Pen), m_currentPenWidth(5), currentColor(255, 255, 255, 128)
+      m_currentTool(Tool::Pen), m_currentPenWidth(5), currentColor(255, 255, 255, 128)
 {
     setAttribute(Qt::WA_TranslucentBackground);
     setMouseTracking(true); // Needed for hover events
@@ -93,7 +93,6 @@ void TransparentWidget::mousePressEvent(QMouseEvent *event)
         update();
     } else if (event->button() == Qt::MiddleButton) {
         m_isAdjustingBrushSize = true;
-        m_brushWasAdjusted = false; // Reset flag on new press
     }
 }
 
@@ -123,9 +122,6 @@ void TransparentWidget::mouseReleaseEvent(QMouseEvent *event)
         update();
     } else if (event->button() == Qt::MiddleButton) {
         m_isAdjustingBrushSize = false;
-        if (!m_brushWasAdjusted) {
-            emit middleButtonClicked();
-        }
     } else if (event->button() == Qt::RightButton) {
         m_rightClickTimer->start();
     }
@@ -140,6 +136,8 @@ void TransparentWidget::mouseDoubleClickEvent(QMouseEvent *event)
     } else if (event->button() == Qt::RightButton) {
         m_rightClickTimer->stop(); // CRITICAL: Stop the timer before emitting the signal
         emit rightButtonDoubleClicked();
+    } else if (event->button() == Qt::MiddleButton) {
+        emit middleButtonDoubleClicked();
     }
 }
 
@@ -235,7 +233,6 @@ void TransparentWidget::wheelEvent(QWheelEvent *event)
     if (m_isAdjustingBrushSize) {
         int delta = (event->angleDelta().y() > 0) ? -1 : 1;
         m_currentPenWidth = std::clamp(m_currentPenWidth + delta, 1, 100);
-        m_brushWasAdjusted = true; // Mark that a scroll happened
         update();
     } else {
         if (event->angleDelta().y() > 0) {
