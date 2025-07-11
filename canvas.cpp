@@ -8,7 +8,8 @@
 Canvas::Canvas(QWidget *parent)
     : QWidget(parent), drawing(false), mouseInside(false),
       m_currentTool(Tool::Pen), m_scrollMode(ScrollMode::History),
-      m_currentPenWidth(1), currentColor(255, 255, 255, 255),
+      m_currentPenWidth(1), m_currentTextSize(16), // Default fallback sizes
+      currentColor(255, 255, 255, 255),
       m_showIndicator(false), m_textInput(nullptr)
 {
     setAttribute(Qt::WA_TranslucentBackground);
@@ -21,11 +22,21 @@ Canvas::Canvas(QWidget *parent)
 
     m_indicatorTimer = new QTimer(this);
     m_indicatorTimer->setSingleShot(true);
-    m_indicatorTimer->setInterval(1000); // 1 second
+    m_indicatorTimer->setInterval(Constants::INDICATOR_TIMEOUT_MS);
     connect(m_indicatorTimer, &QTimer::timeout, this, &Canvas::hideModeIndicator);
 }
 
 Canvas::~Canvas() {}
+
+void Canvas::setInitialPenWidth(int width)
+{
+    m_currentPenWidth = width;
+}
+
+void Canvas::setInitialTextSize(int size)
+{
+    m_currentTextSize = size;
+}
 
 void Canvas::setPenColor(const QColor &color)
 {
@@ -87,7 +98,7 @@ void Canvas::handleTextEditingFinished()
     if (!text.isEmpty()) {
         // Prepare to calculate text size for centering
         QFont font;
-        font.setPointSize(m_currentPenWidth + 10);
+        font.setPointSize(m_currentTextSize);
         QFontMetrics fm(font);
         
         // Calculate the bounding box of the text
@@ -97,7 +108,7 @@ void Canvas::handleTextEditingFinished()
         QPoint topLeftPos = centerPos - textRect.center();
 
         undonePaths.clear();
-        paths.append({ {topLeftPos}, currentColor, m_currentPenWidth, Tool::Text, text });
+        paths.append({ {topLeftPos}, currentColor, 0, Tool::Text, text, m_currentTextSize });
         update();
     }
 }
@@ -144,7 +155,7 @@ void Canvas::mousePressEvent(QMouseEvent *event)
             connect(m_textInput, &QLineEdit::editingFinished, this, &Canvas::handleTextEditingFinished);
             
             QFont font;
-            font.setPointSize(m_currentPenWidth + 10);
+            font.setPointSize(m_currentTextSize);
             m_textInput->setFont(font);
             
             m_textInput->setStyleSheet(
@@ -276,7 +287,7 @@ void Canvas::paintEvent(QPaintEvent *event)
                     {
                         painter.save();
                         QFont font = painter.font();
-                        font.setPointSize(pathData.penWidth + 10); // Use penWidth to control font size
+                        font.setPointSize(pathData.textSize);
                         painter.setFont(font);
                         painter.drawText(pathData.points.first(), pathData.text);
                         painter.restore();
@@ -384,36 +395,32 @@ void Canvas::wheelEvent(QWheelEvent *event)
     int delta = event->angleDelta().y();
     if (delta == 0) return;
 
-    int h, s, v;
+    int h, s, v, a;
+    currentColor.getHsv(&h, &s, &v, &a);
     
     switch (m_scrollMode) {
         case ScrollMode::Hue:
+            h = (h + (delta > 0 ? -Constants::HUE_SENSITIVITY : Constants::HUE_SENSITIVITY) + 360) % 360;
+            break;
         case ScrollMode::Saturation:
+            s = std::clamp(s + (delta > 0 ? -Constants::SATURATION_SENSITIVITY : Constants::SATURATION_SENSITIVITY), 0, 255);
+            break;
         case ScrollMode::Brightness:
+            v = std::clamp(v + (delta > 0 ? -Constants::BRIGHTNESS_SENSITIVITY : Constants::BRIGHTNESS_SENSITIVITY), 0, 255);
+            break;
         case ScrollMode::Opacity:
-            currentColor.getHsv(&h, &s, &v);
-            if (m_scrollMode == ScrollMode::Hue) {
-                h = (h + (delta > 0 ? -5 : 5) + 360) % 360;
-            } else if (m_scrollMode == ScrollMode::Saturation) {
-                s = std::clamp(s + (delta > 0 ? -5 : 5), 0, 255);
-            } else if (m_scrollMode == ScrollMode::Brightness) {
-                v = std::clamp(v + (delta > 0 ? -5 : 5), 0, 255);
-            } else { // Opacity
-                int alpha = std::clamp(currentColor.alpha() + (delta > 0 ? -5 : 5), 0, 255);
-                currentColor.setAlpha(alpha);
-            }
-            
-            if (m_scrollMode != ScrollMode::Opacity) {
-                currentColor.setHsv(h, s, v);
-            }
-
-            emit penColorChanged(currentColor);
-            showIndicator();
+            a = std::clamp(a + (delta > 0 ? -Constants::OPACITY_SENSITIVITY : Constants::OPACITY_SENSITIVITY), 0, 255);
             break;
         case ScrollMode::BrushSize:
-            m_currentPenWidth = std::max(1, m_currentPenWidth + (delta > 0 ? -1 : 1));
-            showIndicator(QString("%1px").arg(m_currentPenWidth));
-            break;
+            if (m_currentTool == Tool::Text) {
+                m_currentTextSize = std::max(1, m_currentTextSize + (delta > 0 ? -Constants::SIZE_SENSITIVITY : Constants::SIZE_SENSITIVITY));
+                showIndicator(QString("%1pt").arg(m_currentTextSize));
+            } else {
+                m_currentPenWidth = std::max(1, m_currentPenWidth + (delta > 0 ? -Constants::SIZE_SENSITIVITY : Constants::SIZE_SENSITIVITY));
+                showIndicator(QString("%1px").arg(m_currentPenWidth));
+            }
+            update();
+            return; 
         case ScrollMode::History:
             (delta > 0) ? undo() : redo();
             return; 
@@ -423,6 +430,10 @@ void Canvas::wheelEvent(QWheelEvent *event)
             setTool(static_cast<Tool>(nextToolIndex));
             return;
     }
+
+    currentColor.setHsv(h, s, v, a);
+    emit penColorChanged(currentColor);
+    showIndicator();
     update();
 }
 

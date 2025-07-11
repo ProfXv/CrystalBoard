@@ -1,4 +1,6 @@
 #include "mainwindow.h"
+#include <QScreen>
+#include <QGuiApplication>
 #include <QMouseEvent>
 #include <QEvent>
 
@@ -50,10 +52,19 @@ MainWindow::MainWindow(QWidget *parent)
     connect(helpPanel, &HelpPanel::toolSelected,
             canvas, &Canvas::setTool);
 
-    // Set initial color for both widgets
-    QColor initialColor;
-    initialColor.setHsv(0, 255, 255); // Start with Red
-    initialColor.setAlpha(128);
+    // --- Dynamic Initial Sizing & Color ---
+    QScreen *screen = QGuiApplication::primaryScreen();
+    QRect screenGeometry = screen->geometry();
+    int screenHeight = screenGeometry.height();
+
+    // Set initial sizes based on screen height
+    int initialPenWidth = std::max(1, static_cast<int>(screenHeight * 0.005));
+    int initialTextSize = std::max(12, static_cast<int>(screenHeight * 0.025));
+    canvas->setInitialPenWidth(initialPenWidth);
+    canvas->setInitialTextSize(initialTextSize);
+
+    // Set initial color to white (opaque)
+    QColor initialColor(255, 255, 255, 255);
     canvas->setPenColor(initialColor);
     helpPanel->onPenColorChanged(initialColor);
 }

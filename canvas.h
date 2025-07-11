@@ -14,6 +14,15 @@
 #include <algorithm> // For std::clamp
 #include <cmath> // For std::atan2, std::cos, std::sin
 
+namespace Constants {
+    constexpr int INDICATOR_TIMEOUT_MS = 1000;
+    constexpr int HUE_SENSITIVITY = 5;
+    constexpr int SATURATION_SENSITIVITY = 5;
+    constexpr int BRIGHTNESS_SENSITIVITY = 5;
+    constexpr int OPACITY_SENSITIVITY = 5;
+    constexpr int SIZE_SENSITIVITY = 1;
+}
+
 // Define Tool enum accessible by other classes
 enum class Tool {
     Pen,
@@ -43,6 +52,7 @@ struct PathData {
     int penWidth;
     Tool tool;
     QString text;
+    int textSize; // For text tool
 };
 
 class Canvas : public QWidget
@@ -61,6 +71,8 @@ signals:
     void penColorChanged(const QColor &color);
 
 public slots:
+    void setInitialPenWidth(int width);
+    void setInitialTextSize(int size);
     void setPenColor(const QColor &color);
     void setTool(Tool newTool);
     void undo();
@@ -93,6 +105,7 @@ private:
     Tool m_currentTool;
     ScrollMode m_scrollMode;
     int m_currentPenWidth;
+    int m_currentTextSize;
     QPoint cursorPos;
     QColor currentColor;
     QVector<QPoint> currentPath;
