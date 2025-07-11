@@ -28,8 +28,8 @@ ColorPickerWidget::ColorPickerWidget(QWidget *parent) : QWidget(parent), current
         "<p><i>A crystal-clear, transparent canvas that floats above your desktop.</i></p>"
         "</div>"
         "<div align='center'>"
-        "<table style='width:100%; margin-top: 15px; border-collapse: collapse;'>"
-        "  <thead style='border-top: 2px solid white; border-bottom: 2px solid white;'>"
+        "<table style='width:100%; margin-top: 15px;'>"
+        "  <thead>"
         "    <tr>"
         "      <th style='padding: 10px; text-align: center;'></th>"
         "      <th style='padding: 10px; text-align: center;'>Left Button</th>"
@@ -37,7 +37,7 @@ ColorPickerWidget::ColorPickerWidget(QWidget *parent) : QWidget(parent), current
         "      <th style='padding: 10px; text-align: center;'>Right Button</th>"
         "    </tr>"
         "  </thead>"
-        "  <tbody style='border-bottom: 2px solid white;'>"
+        "  <tbody>"
         "    <tr>"
         "      <th style='padding: 10px; text-align: right;'>Click</th>"
         "      <td style='padding: 10px; text-align: center;'><u>Drag</u> to draw</td>"
@@ -52,7 +52,7 @@ ColorPickerWidget::ColorPickerWidget(QWidget *parent) : QWidget(parent), current
         "    </tr>"
         "  </tbody>"
         "</table>"
-        "<p style='text-align: center; margin-top: 15px;'><b>Scroll Wheel:</b> Use Active Mode</p>"
+        "<p style='text-align: center; margin-top: 15px;'><b>Scroll Wheel:</b> use active mode</p>"
         "</div>";
     helpLabel->setText(helpText);
     helpLabel->setStyleSheet(helpTextStyle);
@@ -121,48 +121,6 @@ ColorPickerWidget::ColorPickerWidget(QWidget *parent) : QWidget(parent), current
     
     mainLayout->addStretch(1);
 
-    // --- Tool Selection Buttons ---
-    QHBoxLayout *toolLayout = new QHBoxLayout();
-    toolLayout->setSpacing(10);
-    
-    penButton = new QPushButton("Pen");
-    eraserButton = new QPushButton("Eraser");
-    lineButton = new QPushButton("Line");
-    rectButton = new QPushButton("Rect");
-    circleButton = new QPushButton("Circle");
-
-    const QString toolButtonStyle =
-        "QPushButton {"
-        "   background-color: #666;"
-        "   color: white;"
-        "   border: 1px solid #444;"
-        "   padding: 10px;"
-        "   font-size: 16px;"
-        "   border-radius: 5px;"
-        "}"
-        "QPushButton:checked {"
-        "   background-color: #888;"
-        "   border: 1px solid #999;"
-        "}"
-        "QPushButton:pressed {"
-        "   background-color: #777;"
-        "}";
-
-    QPushButton* buttons[] = {penButton, eraserButton, lineButton, rectButton, circleButton};
-    for(auto* button : buttons) {
-        button->setStyleSheet(toolButtonStyle);
-        button->setCheckable(true);
-    }
-    penButton->setChecked(true); // Pen is the default tool
-
-    QButtonGroup *toolGroup = new QButtonGroup(this);
-    toolGroup->setExclusive(true);
-    for(auto* button : buttons) {
-        toolGroup->addButton(button);
-        toolLayout->addWidget(button);
-    }
-    mainLayout->addLayout(toolLayout);
-
     // --- RGB Label ---
     rgbLabel = new QLabel(this);
     rgbLabel->setAlignment(Qt::AlignCenter);
@@ -186,13 +144,6 @@ ColorPickerWidget::ColorPickerWidget(QWidget *parent) : QWidget(parent), current
     connect(greenPlusButton, &QPushButton::clicked, this, &ColorPickerWidget::incrementGreen);
     connect(blueMinusButton, &QPushButton::clicked, this, &ColorPickerWidget::decrementBlue);
     connect(bluePlusButton, &QPushButton::clicked, this, &ColorPickerWidget::incrementBlue);
-
-    // --- Tool Connections ---
-    connect(penButton, &QPushButton::clicked, this, [this](){ emit toolSelected(Tool::Pen); });
-    connect(eraserButton, &QPushButton::clicked, this, [this](){ emit toolSelected(Tool::Eraser); });
-    connect(lineButton, &QPushButton::clicked, this, [this](){ emit toolSelected(Tool::Line); });
-    connect(rectButton, &QPushButton::clicked, this, [this](){ emit toolSelected(Tool::Rectangle); });
-    connect(circleButton, &QPushButton::clicked, this, [this](){ emit toolSelected(Tool::Circle); });
 
     setLayout(mainLayout);
     updateColor();

@@ -51,13 +51,6 @@ private:
     
     QLabel *rgbLabel;
     QColor currentColor;
-
-    // Tool buttons
-    QPushButton *penButton;
-    QPushButton *eraserButton;
-    QPushButton *lineButton;
-    QPushButton *rectButton;
-    QPushButton *circleButton;
 };
 
 #endif // COLORPICKERWIDGET_H
