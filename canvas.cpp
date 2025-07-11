@@ -8,7 +8,7 @@
 Canvas::Canvas(QWidget *parent)
     : QWidget(parent), drawing(false), mouseInside(false),
       m_currentTool(Tool::Pen), m_scrollMode(ScrollMode::History),
-      m_currentPenWidth(1), currentColor(255, 255, 255, 128),
+      m_currentPenWidth(1), currentColor(255, 255, 255, 255),
       m_showIndicator(false), m_textInput(nullptr)
 {
     setAttribute(Qt::WA_TranslucentBackground);
@@ -164,7 +164,7 @@ void Canvas::mousePressEvent(QMouseEvent *event)
             currentPath.clear();
             currentPath.append(event->position().toPoint());
             // For shape tools, add a second point to be modified during mouse move.
-            if (m_currentTool == Tool::Line || m_currentTool == Tool::Rectangle || m_currentTool == Tool::Circle) {
+            if (m_currentTool == Tool::Line || m_currentTool == Tool::Arrow || m_currentTool == Tool::Rectangle || m_currentTool == Tool::Circle) {
                 currentPath.append(event->position().toPoint());
             }
             update();
@@ -252,6 +252,18 @@ void Canvas::paintEvent(QPaintEvent *event)
                     if (pathData.points.size() > 1)
                         painter.drawLine(pathData.points.first(), pathData.points.last());
                     break;
+                case Tool::Arrow:
+                    if (pathData.points.size() > 1) {
+                        QLineF line(pathData.points.first(), pathData.points.last());
+                        painter.drawLine(line);
+                        // Draw arrowhead
+                        double angle = std::atan2(-line.dy(), line.dx());
+                        qreal arrowSize = pathData.penWidth * 3;
+                        QPointF arrowP1 = line.p2() - QPointF(sin(angle + M_PI / 3) * arrowSize, cos(angle + M_PI / 3) * arrowSize);
+                        QPointF arrowP2 = line.p2() - QPointF(sin(angle + M_PI - M_PI / 3) * arrowSize, cos(angle + M_PI - M_PI / 3) * arrowSize);
+                        painter.drawPolyline(QPolygonF() << arrowP1 << line.p2() << arrowP2);
+                    }
+                    break;
                 case Tool::Rectangle:
                      if (pathData.points.size() > 1)
                         painter.drawRect(QRect(pathData.points.first(), pathData.points.last()));
@@ -294,6 +306,18 @@ void Canvas::paintEvent(QPaintEvent *event)
                 break;
             case Tool::Line:
                 painter.drawLine(currentPath.first(), currentPath.last());
+                break;
+            case Tool::Arrow:
+                {
+                    QLineF line(currentPath.first(), currentPath.last());
+                    painter.drawLine(line);
+                    // Draw arrowhead
+                    double angle = std::atan2(-line.dy(), line.dx());
+                    qreal arrowSize = m_currentPenWidth * 3;
+                    QPointF arrowP1 = line.p2() - QPointF(sin(angle + M_PI / 3) * arrowSize, cos(angle + M_PI / 3) * arrowSize);
+                    QPointF arrowP2 = line.p2() - QPointF(sin(angle + M_PI - M_PI / 3) * arrowSize, cos(angle + M_PI - M_PI / 3) * arrowSize);
+                    painter.drawPolyline(QPolygonF() << arrowP1 << line.p2() << arrowP2);
+                }
                 break;
             case Tool::Rectangle:
                 painter.drawRect(QRect(currentPath.first(), currentPath.last()));
@@ -366,15 +390,23 @@ void Canvas::wheelEvent(QWheelEvent *event)
         case ScrollMode::Hue:
         case ScrollMode::Saturation:
         case ScrollMode::Brightness:
+        case ScrollMode::Opacity:
             currentColor.getHsv(&h, &s, &v);
             if (m_scrollMode == ScrollMode::Hue) {
                 h = (h + (delta > 0 ? -5 : 5) + 360) % 360;
             } else if (m_scrollMode == ScrollMode::Saturation) {
                 s = std::clamp(s + (delta > 0 ? -5 : 5), 0, 255);
-            } else { // Brightness
+            } else if (m_scrollMode == ScrollMode::Brightness) {
                 v = std::clamp(v + (delta > 0 ? -5 : 5), 0, 255);
+            } else { // Opacity
+                int alpha = std::clamp(currentColor.alpha() + (delta > 0 ? -5 : 5), 0, 255);
+                currentColor.setAlpha(alpha);
             }
-            currentColor.setHsv(h, s, v);
+            
+            if (m_scrollMode != ScrollMode::Opacity) {
+                currentColor.setHsv(h, s, v);
+            }
+
             emit penColorChanged(currentColor);
             showIndicator();
             break;
@@ -387,7 +419,7 @@ void Canvas::wheelEvent(QWheelEvent *event)
             return; 
         case ScrollMode::ToolSwitch:
             int currentToolIndex = static_cast<int>(m_currentTool);
-            int nextToolIndex = (currentToolIndex + (delta > 0 ? -1 : 1) + 6) % 6;
+            int nextToolIndex = (currentToolIndex + (delta > 0 ? -1 : 1) + 7) % 7;
             setTool(static_cast<Tool>(nextToolIndex));
             return;
     }
@@ -396,16 +428,16 @@ void Canvas::wheelEvent(QWheelEvent *event)
 
 void Canvas::cycleScrollMode()
 {
-    m_scrollMode = static_cast<ScrollMode>((static_cast<int>(m_scrollMode) + 1) % 6);
+    m_scrollMode = static_cast<ScrollMode>((static_cast<int>(m_scrollMode) + 1) % 7);
     showIndicator();
 }
 
 void Canvas::showIndicator(const QString &subText)
 {
-    if (m_scrollMode == ScrollMode::Hue || m_scrollMode == ScrollMode::Saturation || m_scrollMode == ScrollMode::Brightness) {
+    if (m_scrollMode == ScrollMode::Hue || m_scrollMode == ScrollMode::Saturation || m_scrollMode == ScrollMode::Brightness || m_scrollMode == ScrollMode::Opacity) {
         int h, s, v;
         currentColor.getHsv(&h, &s, &v);
-        m_indicatorSubText = QString::asprintf("H:%.2f S:%.2f B:%.2f", h / 359.0, s / 255.0, v / 255.0);
+        m_indicatorSubText = QString::asprintf("H:%.2f S:%.2f B:%.2f A:%.2f", h / 359.0, s / 255.0, v / 255.0, currentColor.alphaF());
     } else {
         m_indicatorSubText = subText;
     }
@@ -422,6 +454,7 @@ QString Canvas::scrollModeToString() const
         case ScrollMode::Hue:        return "Hue";
         case ScrollMode::Saturation: return "Saturation";
         case ScrollMode::Brightness: return "Brightness";
+        case ScrollMode::Opacity:    return "Opacity";
         case ScrollMode::BrushSize:  return "Size";
         case ScrollMode::ToolSwitch: return "Tool";
     }
@@ -435,6 +468,7 @@ QString Canvas::toolToString(Tool tool) const
         case Tool::Eraser:    return "eraser";
         case Tool::Text:      return "text";
         case Tool::Line:      return "line";
+        case Tool::Arrow:     return "arrow";
         case Tool::Rectangle: return "rectangle";
         case Tool::Circle:    return "circle";
     }

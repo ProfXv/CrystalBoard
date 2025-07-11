@@ -20,6 +20,7 @@ enum class Tool {
     Eraser,
     Text,
     Line,
+    Arrow,
     Rectangle,
     Circle
 };
@@ -30,6 +31,7 @@ enum class ScrollMode {
     Hue,
     Saturation,
     Brightness,
+    Opacity,
     BrushSize,
     ToolSwitch
 };
