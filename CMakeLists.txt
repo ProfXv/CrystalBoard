@@ -16,12 +16,12 @@ find_package(Qt6 COMPONENTS Widgets REQUIRED)
 
 add_executable(CrystalBoard
     main.cpp
-    mainwindow.h
     mainwindow.cpp
-    transparentwidget.h
-    transparentwidget.cpp
-    colorpickerwidget.h
-    colorpickerwidget.cpp
+    mainwindow.h
+    canvas.cpp
+    canvas.h
+    helppanel.cpp
+    helppanel.h
 )
 
 target_link_libraries(CrystalBoard PRIVATE Qt6::Widgets)

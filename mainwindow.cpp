@@ -14,48 +14,48 @@ MainWindow::MainWindow(QWidget *parent)
     setCentralWidget(stackedWidget);
 
     // Create the widgets
-    drawingWidget = new TransparentWidget(this);
-    colorPickerWidget = new ColorPickerWidget(this);
+    canvas = new Canvas(this);
+    helpPanel = new HelpPanel(this);
 
     // Add them to the stack
-    stackedWidget->addWidget(drawingWidget);
-    stackedWidget->addWidget(colorPickerWidget);
+    stackedWidget->addWidget(canvas);
+    stackedWidget->addWidget(helpPanel);
 
     // Install event filter on the color picker to catch global mouse events
-    colorPickerWidget->installEventFilter(this);
+    helpPanel->installEventFilter(this);
 
     // --- Connect Signals and Slots ---
 
     // 1. When color is changed in picker, update drawing widget's pen
-    connect(colorPickerWidget, &ColorPickerWidget::colorChanged,
-            drawingWidget, &TransparentWidget::setPenColor);
+    connect(helpPanel, &HelpPanel::colorChanged,
+            canvas, &Canvas::setPenColor);
 
     // 1b. When color is changed by wheel, update picker's display
-    connect(drawingWidget, &TransparentWidget::penColorChanged,
-            colorPickerWidget, &ColorPickerWidget::onPenColorChanged);
+    connect(canvas, &Canvas::penColorChanged,
+            helpPanel, &HelpPanel::onPenColorChanged);
             
     // 2. Right-click on drawing widget clears the canvas
-    connect(drawingWidget, &TransparentWidget::rightButtonClicked,
-            drawingWidget, &TransparentWidget::clearCanvas);
+    connect(canvas, &Canvas::rightButtonClicked,
+            canvas, &Canvas::clearCanvas);
 
     // 3. Middle-double-click on drawing widget toggles the color picker view
-    connect(drawingWidget, &TransparentWidget::middleButtonDoubleClicked,
-            this, &MainWindow::toggleColorPicker);
+    connect(canvas, &Canvas::middleButtonDoubleClicked,
+            this, &MainWindow::toggleHelpPanel);
 
     // 4. Right-double-click on drawing widget closes the application
-    connect(drawingWidget, &TransparentWidget::rightButtonDoubleClicked,
+    connect(canvas, &Canvas::rightButtonDoubleClicked,
             this, &MainWindow::close);
             
     // 5. When a tool is selected in picker, update drawing widget's tool
-    connect(colorPickerWidget, &ColorPickerWidget::toolSelected,
-            drawingWidget, &TransparentWidget::setTool);
+    connect(helpPanel, &HelpPanel::toolSelected,
+            canvas, &Canvas::setTool);
 
     // Set initial color for both widgets
     QColor initialColor;
     initialColor.setHsv(0, 255, 255); // Start with Red
     initialColor.setAlpha(128);
-    drawingWidget->setPenColor(initialColor);
-    colorPickerWidget->onPenColorChanged(initialColor);
+    canvas->setPenColor(initialColor);
+    helpPanel->onPenColorChanged(initialColor);
 }
 
 MainWindow::~MainWindow()
@@ -71,7 +71,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     QMainWindow::keyPressEvent(event);
 }
 
-void MainWindow::toggleColorPicker()
+void MainWindow::toggleHelpPanel()
 {
     int currentIndex = stackedWidget->currentIndex();
     int nextIndex = (currentIndex + 1) % stackedWidget->count();
@@ -81,10 +81,10 @@ void MainWindow::toggleColorPicker()
 bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
     // Global event filter to handle closing from the color picker view
-    if (obj == colorPickerWidget && event->type() == QEvent::MouseButtonDblClick) {
+    if (obj == helpPanel && event->type() == QEvent::MouseButtonDblClick) {
         QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
         if (mouseEvent->button() == Qt::MiddleButton) {
-            toggleColorPicker();
+            toggleHelpPanel();
             return true; // Event is handled
         }
         if (mouseEvent->button() == Qt::RightButton) {

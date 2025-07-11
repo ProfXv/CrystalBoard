@@ -1,11 +1,11 @@
-#include "transparentwidget.h"
+#include "canvas.h"
 #include <QEnterEvent>
 #include <QApplication>
 #include <QPainterPath>
 #include <QTextDocument>
 #include <QAbstractTextDocumentLayout>
 
-TransparentWidget::TransparentWidget(QWidget *parent)
+Canvas::Canvas(QWidget *parent)
     : QWidget(parent), drawing(false), mouseInside(false),
       m_currentTool(Tool::Pen), m_scrollMode(ScrollMode::History),
       m_currentPenWidth(1), currentColor(255, 255, 255, 128),
@@ -17,17 +17,17 @@ TransparentWidget::TransparentWidget(QWidget *parent)
     m_rightClickTimer = new QTimer(this);
     m_rightClickTimer->setSingleShot(true);
     m_rightClickTimer->setInterval(QApplication::doubleClickInterval());
-    connect(m_rightClickTimer, &QTimer::timeout, this, &TransparentWidget::onRightClickTimeout);
+    connect(m_rightClickTimer, &QTimer::timeout, this, &Canvas::onRightClickTimeout);
 
     m_indicatorTimer = new QTimer(this);
     m_indicatorTimer->setSingleShot(true);
     m_indicatorTimer->setInterval(1000); // 1 second
-    connect(m_indicatorTimer, &QTimer::timeout, this, &TransparentWidget::hideModeIndicator);
+    connect(m_indicatorTimer, &QTimer::timeout, this, &Canvas::hideModeIndicator);
 }
 
-TransparentWidget::~TransparentWidget() {}
+Canvas::~Canvas() {}
 
-void TransparentWidget::setPenColor(const QColor &color)
+void Canvas::setPenColor(const QColor &color)
 {
     currentColor = color;
     if (m_currentTool == Tool::Eraser) {
@@ -36,14 +36,14 @@ void TransparentWidget::setPenColor(const QColor &color)
     update();
 }
 
-void TransparentWidget::setTool(Tool newTool)
+void Canvas::setTool(Tool newTool)
 {
     m_currentTool = newTool;
     showIndicator(toolToString(m_currentTool));
     update();
 }
 
-void TransparentWidget::undo()
+void Canvas::undo()
 {
     if (!paths.isEmpty()) {
         undonePaths.append(paths.takeLast());
@@ -52,7 +52,7 @@ void TransparentWidget::undo()
     }
 }
 
-void TransparentWidget::redo()
+void Canvas::redo()
 {
     if (!undonePaths.isEmpty()) {
         paths.append(undonePaths.takeLast());
@@ -61,25 +61,25 @@ void TransparentWidget::redo()
     }
 }
 
-void TransparentWidget::clearCanvas()
+void Canvas::clearCanvas()
 {
     paths.clear();
     undonePaths.clear();
     update();
 }
 
-void TransparentWidget::onRightClickTimeout()
+void Canvas::onRightClickTimeout()
 {
     emit rightButtonClicked();
 }
 
-void TransparentWidget::hideModeIndicator()
+void Canvas::hideModeIndicator()
 {
     m_showIndicator = false;
     update();
 }
 
-void TransparentWidget::enterEvent(QEnterEvent *event)
+void Canvas::enterEvent(QEnterEvent *event)
 {
     Q_UNUSED(event);
     mouseInside = true;
@@ -88,7 +88,7 @@ void TransparentWidget::enterEvent(QEnterEvent *event)
     update();
 }
 
-void TransparentWidget::leaveEvent(QEvent *event)
+void Canvas::leaveEvent(QEvent *event)
 {
     Q_UNUSED(event);
     mouseInside = false;
@@ -96,7 +96,7 @@ void TransparentWidget::leaveEvent(QEvent *event)
     update();
 }
 
-void TransparentWidget::mousePressEvent(QMouseEvent *event)
+void Canvas::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton) {
         drawing = true;
@@ -110,7 +110,7 @@ void TransparentWidget::mousePressEvent(QMouseEvent *event)
     }
 }
 
-void TransparentWidget::mouseMoveEvent(QMouseEvent *event)
+void Canvas::mouseMoveEvent(QMouseEvent *event)
 {
     cursorPos = event->position().toPoint();
     if (drawing) {
@@ -123,7 +123,7 @@ void TransparentWidget::mouseMoveEvent(QMouseEvent *event)
     update();
 }
 
-void TransparentWidget::mouseReleaseEvent(QMouseEvent *event)
+void Canvas::mouseReleaseEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton && drawing) {
         drawing = false;
@@ -140,7 +140,7 @@ void TransparentWidget::mouseReleaseEvent(QMouseEvent *event)
     }
 }
 
-void TransparentWidget::mouseDoubleClickEvent(QMouseEvent *event)
+void Canvas::mouseDoubleClickEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::RightButton) {
         m_rightClickTimer->stop();
@@ -150,7 +150,7 @@ void TransparentWidget::mouseDoubleClickEvent(QMouseEvent *event)
     }
 }
 
-void TransparentWidget::paintEvent(QPaintEvent *event)
+void Canvas::paintEvent(QPaintEvent *event)
 {
     Q_UNUSED(event);
     QPainter painter(this);
@@ -265,7 +265,7 @@ void TransparentWidget::paintEvent(QPaintEvent *event)
     }
 }
 
-void TransparentWidget::wheelEvent(QWheelEvent *event)
+void Canvas::wheelEvent(QWheelEvent *event)
 {
     int delta = event->angleDelta().y();
     if (delta == 0) return;
@@ -275,13 +275,13 @@ void TransparentWidget::wheelEvent(QWheelEvent *event)
     switch (m_scrollMode) {
         case ScrollMode::Hue:
         case ScrollMode::Saturation:
-        case ScrollMode::Value:
+        case ScrollMode::Brightness:
             currentColor.getHsv(&h, &s, &v);
             if (m_scrollMode == ScrollMode::Hue) {
                 h = (h + (delta > 0 ? -5 : 5) + 360) % 360;
             } else if (m_scrollMode == ScrollMode::Saturation) {
                 s = std::clamp(s + (delta > 0 ? -5 : 5), 0, 255);
-            } else { // Value
+            } else { // Brightness
                 v = std::clamp(v + (delta > 0 ? -5 : 5), 0, 255);
             }
             currentColor.setHsv(h, s, v);
@@ -304,18 +304,18 @@ void TransparentWidget::wheelEvent(QWheelEvent *event)
     update();
 }
 
-void TransparentWidget::cycleScrollMode()
+void Canvas::cycleScrollMode()
 {
     m_scrollMode = static_cast<ScrollMode>((static_cast<int>(m_scrollMode) + 1) % 6);
     showIndicator();
 }
 
-void TransparentWidget::showIndicator(const QString &subText)
+void Canvas::showIndicator(const QString &subText)
 {
-    if (m_scrollMode == ScrollMode::Hue || m_scrollMode == ScrollMode::Saturation || m_scrollMode == ScrollMode::Value) {
+    if (m_scrollMode == ScrollMode::Hue || m_scrollMode == ScrollMode::Saturation || m_scrollMode == ScrollMode::Brightness) {
         int h, s, v;
         currentColor.getHsv(&h, &s, &v);
-        m_indicatorSubText = QString::asprintf("H:%.2f S:%.2f V:%.2f", h / 359.0, s / 255.0, v / 255.0);
+        m_indicatorSubText = QString::asprintf("H:%.2f S:%.2f B:%.2f", h / 359.0, s / 255.0, v / 255.0);
     } else {
         m_indicatorSubText = subText;
     }
@@ -325,20 +325,20 @@ void TransparentWidget::showIndicator(const QString &subText)
     update();
 }
 
-QString TransparentWidget::scrollModeToString() const
+QString Canvas::scrollModeToString() const
 {
     switch (m_scrollMode) {
         case ScrollMode::History:    return "History";
         case ScrollMode::Hue:        return "Hue";
         case ScrollMode::Saturation: return "Saturation";
-        case ScrollMode::Value:      return "Value";
+        case ScrollMode::Brightness: return "Brightness";
         case ScrollMode::BrushSize:  return "Size";
         case ScrollMode::ToolSwitch: return "Tool";
     }
     return "";
 }
 
-QString TransparentWidget::toolToString(Tool tool) const
+QString Canvas::toolToString(Tool tool) const
 {
     switch (tool) {
         case Tool::Pen:       return "pen";

@@ -1,5 +1,5 @@
-#ifndef TRANSPARENTWIDGET_H
-#define TRANSPARENTWIDGET_H
+#ifndef CANVAS_H
+#define CANVAS_H
 
 #include <QWidget>
 #include <QPoint>
@@ -27,7 +27,7 @@ enum class ScrollMode {
     History,
     Hue,
     Saturation,
-    Value,
+    Brightness,
     BrushSize,
     ToolSwitch
 };
@@ -40,13 +40,13 @@ struct PathData {
     Tool tool;
 };
 
-class TransparentWidget : public QWidget
+class Canvas : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit TransparentWidget(QWidget *parent = nullptr);
-    ~TransparentWidget();
+    explicit Canvas(QWidget *parent = nullptr);
+    ~Canvas();
 
 signals:
     void penColorChanged(const QColor &color);
@@ -98,4 +98,4 @@ private:
     QString m_indicatorSubText;
 };
 
-#endif // TRANSPARENTWIDGET_H
+#endif // CANVAS_H

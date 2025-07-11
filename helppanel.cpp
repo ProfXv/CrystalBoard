@@ -1,11 +1,11 @@
-#include "colorpickerwidget.h"
+#include "helppanel.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPainter>
 #include <QDebug>
 #include <QButtonGroup>
 
-ColorPickerWidget::ColorPickerWidget(QWidget *parent) : QWidget(parent), currentColor(255, 255, 255, 128)
+HelpPanel::HelpPanel(QWidget *parent) : QWidget(parent), currentColor(255, 255, 255, 128)
 {
     setAttribute(Qt::WA_TranslucentBackground, true);
     setAutoFillBackground(false);
@@ -75,21 +75,21 @@ ColorPickerWidget::ColorPickerWidget(QWidget *parent) : QWidget(parent), current
     onPenColorChanged(QColor(0, 255, 255, 128)); // Set initial color (cyan)
 }
 
-void ColorPickerWidget::onPenColorChanged(const QColor &color)
+void HelpPanel::onPenColorChanged(const QColor &color)
 {
     currentColor = color;
     // No need to call update() anymore as the background is transparent
     emit colorChanged(currentColor);
 }
 
-void ColorPickerWidget::paintEvent(QPaintEvent *event)
+void HelpPanel::paintEvent(QPaintEvent *event)
 {
     // This is now intentionally left empty to keep the widget background transparent.
     // The helpLabel's stylesheet handles its own black background.
     Q_UNUSED(event);
 }
 
-QColor ColorPickerWidget::getCurrentColor() const
+QColor HelpPanel::getCurrentColor() const
 {
     return currentColor;
 }

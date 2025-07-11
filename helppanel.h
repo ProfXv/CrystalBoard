@@ -1,5 +1,5 @@
-#ifndef COLORPICKERWIDGET_H
-#define COLORPICKERWIDGET_H
+#ifndef HELPPANEL_H
+#define HELPPANEL_H
 
 #include <QWidget>
 #include <QSlider>
@@ -7,14 +7,14 @@
 #include <QLabel>
 #include <QColor>
 #include <QPaintEvent>
-#include "transparentwidget.h" // Include for the Tool enum
+#include "canvas.h" // Include for the Tool enum
 
-class ColorPickerWidget : public QWidget
+class HelpPanel : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit ColorPickerWidget(QWidget *parent = nullptr);
+    explicit HelpPanel(QWidget *parent = nullptr);
     QColor getCurrentColor() const;
 
 public slots:
@@ -32,4 +32,4 @@ private:
     QColor currentColor;
 };
 
-#endif // COLORPICKERWIDGET_H
+#endif // HELPPANEL_H
