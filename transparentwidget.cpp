@@ -39,7 +39,7 @@ void TransparentWidget::setPenColor(const QColor &color)
 void TransparentWidget::setTool(Tool newTool)
 {
     m_currentTool = newTool;
-    showIndicator(QString("<i>%1</i>").arg(toolToString(m_currentTool)));
+    showIndicator(toolToString(m_currentTool));
     update();
 }
 
@@ -47,7 +47,7 @@ void TransparentWidget::undo()
 {
     if (!paths.isEmpty()) {
         undonePaths.append(paths.takeLast());
-        showIndicator("<i>undo</i>");
+        showIndicator("undo");
         update();
     }
 }
@@ -56,7 +56,7 @@ void TransparentWidget::redo()
 {
     if (!undonePaths.isEmpty()) {
         paths.append(undonePaths.takeLast());
-        showIndicator("<i>redo</i>");
+        showIndicator("redo");
         update();
     }
 }
@@ -237,25 +237,23 @@ void TransparentWidget::paintEvent(QPaintEvent *event)
 
         // Draw mode indicator text if active
         if (m_showIndicator) {
-            QTextDocument textDocument;
-            // Force the text color to white via HTML styling
-            QString htmlText = QString("<body style='color:white;'><b>%1</b>: %2</body>").arg(scrollModeToString(), m_indicatorSubText);
-            textDocument.setHtml(htmlText);
+            QString text = scrollModeToString();
+            if (!m_indicatorSubText.isEmpty()) {
+                text += ": " + m_indicatorSubText;
+            }
             
-            QPoint textPos = cursorPos + QPoint(m_currentPenWidth / 2 + 15, m_currentPenWidth / 2 + 5);
+            QPoint textPos = cursorPos + QPoint(m_currentPenWidth / 2 + 15, m_currentPenWidth / 2 + 15);
             
-            // Draw background rectangle
-            QRectF textRect(textPos, textDocument.documentLayout()->documentSize());
-            textRect.adjust(-5, -2, 5, 2); // Add some padding
-            painter.setBrush(QColor(0, 0, 0, 200));
-            painter.setPen(Qt::NoPen);
-            painter.drawRoundedRect(textRect, 5, 5);
+            // Draw outline
+            painter.setPen(Qt::black);
+            painter.drawText(textPos + QPoint(1, 1), text);
+            painter.drawText(textPos + QPoint(-1, -1), text);
+            painter.drawText(textPos + QPoint(1, -1), text);
+            painter.drawText(textPos + QPoint(-1, 1), text);
 
-            // Draw text on top of the background
-            painter.save();
-            painter.translate(textPos);
-            textDocument.drawContents(&painter);
-            painter.restore();
+            // Draw text
+            painter.setPen(Qt::white);
+            painter.drawText(textPos, text);
         }
     }
 }
@@ -270,7 +268,7 @@ void TransparentWidget::wheelEvent(QWheelEvent *event)
         case ScrollMode::BrushSize:
             // Inverted: scroll up decreases, scroll down increases
             m_currentPenWidth = std::clamp(m_currentPenWidth + (delta > 0 ? -1 : 1), 1, 100);
-            subText = QString("<i>%1</i>").arg(m_currentPenWidth);
+            subText = QString("%1").arg(m_currentPenWidth);
             break;
         case ScrollMode::History:
             // Not inverted: scroll up is undo, scroll down is redo
