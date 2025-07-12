@@ -96,6 +96,7 @@ private slots:
 
 private:
     void cycleScrollMode();
+    void cycleScrollModeBackward();
     QString scrollModeToString() const;
     QString toolToString(Tool tool) const;
     void showIndicator(const QString &subText = "");

@@ -207,6 +207,7 @@ void Canvas::mouseReleaseEvent(QMouseEvent *event)
         }
         update();
     } else if (event->button() == Qt::MiddleButton) {
+        // A single middle-click cycles forward
         cycleScrollMode();
     } else if (event->button() == Qt::RightButton) {
         m_rightClickTimer->start();
@@ -230,7 +231,8 @@ void Canvas::mouseDoubleClickEvent(QMouseEvent *event)
         m_rightClickTimer->stop();
         emit rightButtonDoubleClicked();
     } else if (event->button() == Qt::MiddleButton) {
-        emit middleButtonDoubleClicked();
+        // A double middle-click cycles backward
+        cycleScrollModeBackward();
     }
 }
 
@@ -440,6 +442,14 @@ void Canvas::wheelEvent(QWheelEvent *event)
 void Canvas::cycleScrollMode()
 {
     m_scrollMode = static_cast<ScrollMode>((static_cast<int>(m_scrollMode) + 1) % 7);
+    showIndicator();
+}
+
+void Canvas::cycleScrollModeBackward()
+{
+    int totalModes = 7;
+    int currentModeIndex = static_cast<int>(m_scrollMode);
+    m_scrollMode = static_cast<ScrollMode>((currentModeIndex - 1 + totalModes) % totalModes);
     showIndicator();
 }
 

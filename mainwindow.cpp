@@ -11,6 +11,9 @@ MainWindow::MainWindow(QWidget *parent)
     setAttribute(Qt::WA_TranslucentBackground);
     setWindowFlags(Qt::FramelessWindowHint);
     
+    // Use setFixedSize, which is the key to floating behavior on some WMs
+    setFixedSize(QGuiApplication::primaryScreen()->size());
+
     // Setup the stacked widget to switch between views
     stackedWidget = new QStackedWidget(this);
     setCentralWidget(stackedWidget);

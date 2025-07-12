@@ -18,8 +18,8 @@ CrystalBoard is designed for efficiency. Here are all the controls:
 
 | Action                 | Left Button        | Middle Button          | Right Button         | Scroll Wheel                               |
 | ---------------------- | ------------------ | ---------------------- | -------------------- | ------------------------------------------ |
-| **Click**              | *Drag* to draw     | Cycle Scroll Mode      | Clear entire canvas  | Use active mode                            |
-| **Double-Click**       | Toggle Help Panel  | -                      | **Exit Application** | -                                          |
+| **Click**              | *Drag* to draw     | Cycle Mode (Forward)   | Clear entire canvas  | Use active mode                            |
+| **Double-Click**       | Toggle Help Panel  | Cycle Mode (Backward)  | **Exit Application** | -                                          |
 
 **Scroll Modes (Cycled by Middle-Click):**
 1.  **History**: Undo / Redo
