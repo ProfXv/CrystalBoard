@@ -103,6 +103,7 @@ private:
 
     bool drawing;
     bool mouseInside;
+    bool isMiddleButtonPressed; // Add this line
     Tool m_currentTool;
     ScrollMode m_scrollMode;
     int m_currentPenWidth;

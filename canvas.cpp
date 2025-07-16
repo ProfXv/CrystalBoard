@@ -6,7 +6,7 @@
 #include <QLineEdit>
 
 Canvas::Canvas(QWidget *parent)
-    : QWidget(parent), drawing(false), mouseInside(false),
+    : QWidget(parent), drawing(false), mouseInside(false), isMiddleButtonPressed(false),
       m_currentTool(Tool::Pen), m_scrollMode(ScrollMode::History),
       m_currentPenWidth(1), m_currentTextSize(16), // Default fallback sizes
       currentColor(255, 255, 255, 255),
@@ -180,6 +180,9 @@ void Canvas::mousePressEvent(QMouseEvent *event)
             }
             update();
         }
+    } else if (event->button() == Qt::MiddleButton) {
+        isMiddleButtonPressed = true;
+        event->accept();
     }
 }
 
@@ -207,8 +210,8 @@ void Canvas::mouseReleaseEvent(QMouseEvent *event)
         }
         update();
     } else if (event->button() == Qt::MiddleButton) {
-        // A single middle-click cycles forward
-        cycleScrollMode();
+        isMiddleButtonPressed = false;
+        event->accept();
     } else if (event->button() == Qt::RightButton) {
         m_rightClickTimer->start();
     }
@@ -230,9 +233,6 @@ void Canvas::mouseDoubleClickEvent(QMouseEvent *event)
     } else if (event->button() == Qt::RightButton) {
         m_rightClickTimer->stop();
         emit rightButtonDoubleClicked();
-    } else if (event->button() == Qt::MiddleButton) {
-        // A double middle-click cycles backward
-        cycleScrollModeBackward();
     }
 }
 
@@ -396,6 +396,16 @@ void Canvas::wheelEvent(QWheelEvent *event)
 {
     int delta = event->angleDelta().y();
     if (delta == 0) return;
+
+    if (isMiddleButtonPressed) {
+        if (delta > 0) {
+            cycleScrollModeBackward();
+        } else {
+            cycleScrollMode();
+        }
+        event->accept();
+        return;
+    }
 
     int h, s, v, a;
     currentColor.getHsv(&h, &s, &v, &a);
