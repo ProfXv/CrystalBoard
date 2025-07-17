@@ -1,0 +1,59 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            asset_name: CrystalBoard-linux-x86_64.tar.gz
+            command: |
+              tar czf $ASSET_NAME CrystalBoard
+          - os: windows-latest
+            asset_name: CrystalBoard-windows-x86_64.zip
+            command: |
+              7z a $ASSET_NAME Release/CrystalBoard.exe
+          - os: macos-latest
+            asset_name: CrystalBoard-macos-x86_64.dmg
+            command: |
+              macdeployqt CrystalBoard.app
+              hdiutil create $ASSET_NAME -srcfolder CrystalBoard.app -ov
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.5.0'
+
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build with CMake
+      run: cmake --build build --config Release
+
+    - name: Prepare artifact
+      env:
+        ASSET_NAME: ${{ matrix.asset_name }}
+      run: ${{ matrix.command }}
+      shell: bash
+
+    - name: Upload Release Asset
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: ${{ matrix.asset_name }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

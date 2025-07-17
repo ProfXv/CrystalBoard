@@ -18,11 +18,20 @@ public:
 protected:
     void keyPressEvent(QKeyEvent *event) override;
     bool eventFilter(QObject *obj, QEvent *event) override;
+    void closeEvent(QCloseEvent *event) override;
 
 private slots:
     void toggleHelpPanel();
+    void resetSettings();
 
 private:
+    void loadSettings();
+    void saveSettings();
+    void applyDefaultSettings();
+
+    bool m_isLeftButtonPressed;
+    bool m_isRightButtonPressed;
+
     QStackedWidget *stackedWidget;
     Canvas *canvas;
     HelpPanel *helpPanel;

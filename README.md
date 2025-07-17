@@ -16,15 +16,32 @@ A crystal-clear, transparent canvas that floats above your desktop. CrystalBoard
 
 CrystalBoard is designed for efficiency. Here are all the controls:
 
-| Action         | Left Button       | Right Button         |
-| -------------- | ----------------- | -------------------- |
-| **Single-click** | *Drag* to draw    | Clear entire canvas  |
-| **Double-Click** | Toggle Help Panel | **Exit Application** |
-
-<p align="center">
-  <b>Scroll:</b> use active mode<br>
-  <b>Scroll when <u>Hold</u>:</b> cycle mode
-</p>
+<div align='center'>
+<table style='width:100%; margin-top: 15px;'>
+  <thead>
+    <tr>
+      <th style='padding: 10px; text-align: center;'></th>
+      <th style='padding: 10px; text-align: center;'>Left Button</th>
+      <th style='padding: 10px; text-align: center;'>Right Button</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th style='padding: 10px; text-align: right;'>Single-click</th>
+      <td style='padding: 10px; text-align: center;'><u>Drag</u> to draw</td>
+      <td style='padding: 10px; text-align: center;'>clear canvas</td>
+    </tr>
+    <tr>
+      <th style='padding: 10px; text-align: right;'>Double-click</th>
+      <td style='padding: 10px; text-align: center;'>toggle view</td>
+      <td style='padding: 10px; text-align: center;'>reset config</td>
+    </tr>
+  </tbody>
+</table>
+<p style='text-align: center; margin-top: 15px; margin-bottom: 0; padding: 0;'><b>Scroll:</b> use active mode</p>
+<p style='text-align: center; margin-top: 5px; margin-bottom: 0; padding: 0;'><b>Scroll when <u>Hold</u>:</b> cycle mode</p>
+<p style='text-align: center; margin-top: 5px; margin-bottom: 0; padding: 0;'><b>Left Button + Right Button:</b> exit app</p>
+</div>
 
 **Scroll Modes:**
 1.  **History**: Undo / Redo
@@ -38,6 +55,18 @@ CrystalBoard is designed for efficiency. Here are all the controls:
 **Keyboard:**
 - `ESC`: **Exit Application**
 
+## ⚙️ Configuration
+
+CrystalBoard automatically saves your settings upon exit and reloads them the next time you start the application. This includes your last used tool, color (hue, saturation, value, opacity), and sizes (general and text).
+
+The configuration is stored in a simple INI-style file in the standard location for your operating system:
+
+-   **Linux**: `~/.config/CrystalBoard/CrystalBoard.conf`
+-   **macOS**: `~/Library/Preferences/com.crystalboard.CrystalBoard.plist`
+-   **Windows**: In the system registry under `HKEY_CURRENT_USER\Software\CrystalBoard\CrystalBoard`
+
+You can manually edit this file to change settings, or delete it to reset the application to its default state.
+
 ## 🛠️ Building from Source
 
 ### Dependencies
@@ -49,7 +78,7 @@ CrystalBoard is designed for efficiency. Here are all the controls:
 
 1.  Clone the repository:
     ```bash
-    git clone https://github.com/your-username/CrystalBoard.git
+    git clone https://github.com/ProfXv/CrystalBoard.git
     cd CrystalBoard
     ```
 

@@ -2,10 +2,8 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPainter>
-#include <QDebug>
-#include <QButtonGroup>
 
-HelpPanel::HelpPanel(QWidget *parent) : QWidget(parent), currentColor(255, 255, 255, 128)
+HelpPanel::HelpPanel(QWidget *parent) : QWidget(parent)
 {
     setAttribute(Qt::WA_TranslucentBackground, true);
     setAutoFillBackground(false);
@@ -51,12 +49,13 @@ HelpPanel::HelpPanel(QWidget *parent) : QWidget(parent), currentColor(255, 255, 
         "    <tr>"
         "      <th style='padding: 10px; text-align: right;'>Double-click</th>"
         "      <td style='padding: 10px; text-align: center;'>toggle view</td>"
-        "      <td style='padding: 10px; text-align: center;'>exit app</td>"
+        "      <td style='padding: 10px; text-align: center;'>reset config</td>"
         "    </tr>"
         "  </tbody>"
         "</table>"
         "<p style='text-align: center; margin-top: 15px; margin-bottom: 0; padding: 0;'><b>Scroll:</b> use active mode</p>"
         "<p style='text-align: center; margin-top: 5px; margin-bottom: 0; padding: 0;'><b>Scroll when <u>Hold</u>:</b> cycle mode</p>"
+        "<p style='text-align: center; margin-top: 5px; margin-bottom: 0; padding: 0;'><b>Left Button + Right Button:</b> exit app</p>"
         "</div>";
     helpLabel->setText(helpText);
     helpLabel->setStyleSheet(helpTextStyle);
@@ -70,24 +69,4 @@ HelpPanel::HelpPanel(QWidget *parent) : QWidget(parent), currentColor(255, 255, 
     hLayout->addStretch(1);
 
     setLayout(hLayout);
-    onPenColorChanged(QColor(0, 255, 255, 128)); // Set initial color (cyan)
-}
-
-void HelpPanel::onPenColorChanged(const QColor &color)
-{
-    currentColor = color;
-    // No need to call update() anymore as the background is transparent
-    emit colorChanged(currentColor);
-}
-
-void HelpPanel::paintEvent(QPaintEvent *event)
-{
-    // This is now intentionally left empty to keep the widget background transparent.
-    // The helpLabel's stylesheet handles its own black background.
-    Q_UNUSED(event);
-}
-
-QColor HelpPanel::getCurrentColor() const
-{
-    return currentColor;
 }

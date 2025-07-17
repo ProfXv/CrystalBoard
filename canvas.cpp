@@ -1,12 +1,11 @@
 #include "canvas.h"
 #include <QEnterEvent>
 #include <QApplication>
-#include <QPainterPath>
-#include <QTextDocument>
 #include <QLineEdit>
 
 Canvas::Canvas(QWidget *parent)
-    : QWidget(parent), drawing(false), mouseInside(false), isMiddleButtonPressed(false),
+    : QWidget(parent), m_isInitializing(false),
+      drawing(false), mouseInside(false), isMiddleButtonPressed(false), m_ignoreNextRightRelease(false),
       m_currentTool(Tool::Pen), m_scrollMode(ScrollMode::History),
       m_currentPenWidth(1), m_currentTextSize(16), // Default fallback sizes
       currentColor(255, 255, 255, 255),
@@ -152,6 +151,7 @@ void Canvas::mousePressEvent(QMouseEvent *event)
         if (m_currentTool == Tool::Text) {
             m_textClickPos = event->position().toPoint();
             m_textInput = new QLineEdit(this);
+            m_textInput->installEventFilter(this); // Install filter to catch double-clicks
             connect(m_textInput, &QLineEdit::editingFinished, this, &Canvas::handleTextEditingFinished);
             
             QFont font;
@@ -184,6 +184,7 @@ void Canvas::mousePressEvent(QMouseEvent *event)
         isMiddleButtonPressed = true;
         event->accept();
     }
+    // Right-click press does nothing here.
 }
 
 void Canvas::mouseMoveEvent(QMouseEvent *event)
@@ -201,37 +202,60 @@ void Canvas::mouseMoveEvent(QMouseEvent *event)
 
 void Canvas::mouseReleaseEvent(QMouseEvent *event)
 {
-    if (event->button() == Qt::LeftButton && drawing) {
-        drawing = false;
-        if (!currentPath.isEmpty()) {
-            QColor pathColor = (m_currentTool == Tool::Eraser) ? QColor(0, 0, 0, 0) : currentColor;
-            paths.append({currentPath, pathColor, m_currentPenWidth, m_currentTool});
-            currentPath.clear();
+    if (event->button() == Qt::LeftButton) {
+        if (drawing) {
+            drawing = false;
+            if (!currentPath.isEmpty()) {
+                // For shape tools, only add the path if it's not a single point click
+                if (m_currentTool >= Tool::Line) {
+                    if (currentPath.first() == currentPath.last()) {
+                        currentPath.clear();
+                        update();
+                        return; // Ignore zero-movement clicks
+                    }
+                }
+                QColor pathColor = (m_currentTool == Tool::Eraser) ? QColor(0, 0, 0, 0) : currentColor;
+                paths.append({currentPath, pathColor, m_currentPenWidth, m_currentTool});
+                currentPath.clear();
+            }
+            update();
         }
-        update();
+    } else if (event->button() == Qt::RightButton) {
+        if (m_ignoreNextRightRelease) {
+            m_ignoreNextRightRelease = false;
+            return;
+        }
+        m_rightClickTimer->start();
     } else if (event->button() == Qt::MiddleButton) {
         isMiddleButtonPressed = false;
         event->accept();
-    } else if (event->button() == Qt::RightButton) {
-        m_rightClickTimer->start();
     }
 }
 
 void Canvas::mouseDoubleClickEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton) {
-        if (m_currentTool == Tool::Text) return;
+        // A double-click's primary goal is to toggle help, so we must clean up
+        // any side effects from the first click of the double-click action.
+
+        // If a text input was just created, destroy it.
+        if (m_textInput) {
+            m_textInput->deleteLater();
+            m_textInput = nullptr;
+        }
         
-        // A double-click is preceded by a press and release, which creates a "dot".
-        // We remove that dot before toggling the view.
-        if (!paths.isEmpty()) {
+        // If a "dot" was drawn by a non-text tool, remove it.
+        if (!paths.isEmpty() && m_currentTool != Tool::Text) {
             paths.removeLast();
             update();
         }
         
+        // Now, perform the actual double-click action.
         emit leftButtonDoubleClicked();
+
     } else if (event->button() == Qt::RightButton) {
         m_rightClickTimer->stop();
+        m_ignoreNextRightRelease = true;
         emit rightButtonDoubleClicked();
     }
 }
@@ -444,7 +468,6 @@ void Canvas::wheelEvent(QWheelEvent *event)
     }
 
     currentColor.setHsv(h, s, v, a);
-    emit penColorChanged(currentColor);
     showIndicator();
     update();
 }
@@ -465,6 +488,8 @@ void Canvas::cycleScrollModeBackward()
 
 void Canvas::showIndicator(const QString &subText)
 {
+    if (m_isInitializing) return;
+
     if (m_scrollMode == ScrollMode::Hue || m_scrollMode == ScrollMode::Saturation || m_scrollMode == ScrollMode::Brightness || m_scrollMode == ScrollMode::Opacity) {
         int h, s, v;
         currentColor.getHsv(&h, &s, &v);
@@ -504,4 +529,38 @@ QString Canvas::toolToString(Tool tool) const
         case Tool::Circle:    return "circle";
     }
     return "";
+}
+
+bool Canvas::eventFilter(QObject *watched, QEvent *event)
+{
+    if (watched == m_textInput && event->type() == QEvent::MouseButtonDblClick) {
+        // Intercept double-click on the text input
+        emit leftButtonDoubleClicked();
+        return true; // Event handled
+    }
+    return QWidget::eventFilter(watched, event);
+}
+
+Tool Canvas::toolFromString(const QString &s)
+{
+    if (s.compare("pen", Qt::CaseInsensitive) == 0) return Tool::Pen;
+    if (s.compare("eraser", Qt::CaseInsensitive) == 0) return Tool::Eraser;
+    if (s.compare("text", Qt::CaseInsensitive) == 0) return Tool::Text;
+    if (s.compare("line", Qt::CaseInsensitive) == 0) return Tool::Line;
+    if (s.compare("arrow", Qt::CaseInsensitive) == 0) return Tool::Arrow;
+    if (s.compare("rectangle", Qt::CaseInsensitive) == 0) return Tool::Rectangle;
+    if (s.compare("circle", Qt::CaseInsensitive) == 0) return Tool::Circle;
+    return Tool::Pen; // Default fallback
+}
+
+ScrollMode Canvas::scrollModeFromString(const QString &s)
+{
+    if (s.compare("History", Qt::CaseInsensitive) == 0) return ScrollMode::History;
+    if (s.compare("Hue", Qt::CaseInsensitive) == 0) return ScrollMode::Hue;
+    if (s.compare("Saturation", Qt::CaseInsensitive) == 0) return ScrollMode::Saturation;
+    if (s.compare("Brightness", Qt::CaseInsensitive) == 0) return ScrollMode::Brightness;
+    if (s.compare("Opacity", Qt::CaseInsensitive) == 0) return ScrollMode::Opacity;
+    if (s.compare("Size", Qt::CaseInsensitive) == 0) return ScrollMode::BrushSize;
+    if (s.compare("Tool", Qt::CaseInsensitive) == 0) return ScrollMode::ToolSwitch;
+    return ScrollMode::History; // Default fallback
 }

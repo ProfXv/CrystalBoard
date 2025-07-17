@@ -67,10 +67,24 @@ signals:
     void leftButtonDoubleClicked();
     void rightButtonClicked();
     void rightButtonDoubleClicked();
-    void middleButtonDoubleClicked();
-    void penColorChanged(const QColor &color);
+
+public: // Add getters for state saving
+    ScrollMode getScrollMode() const { return m_scrollMode; }
+    Tool getTool() const { return m_currentTool; }
+    int getPenWidth() const { return m_currentPenWidth; }
+    int getTextSize() const { return m_currentTextSize; }
+    QColor getColor() const { return currentColor; }
+
+    // String conversion helpers for settings
+    QString toolToString(Tool tool) const;
+    QString scrollModeToString() const;
+    static Tool toolFromString(const QString &s);
+    static ScrollMode scrollModeFromString(const QString &s);
 
 public slots:
+    void beginInitialization() { m_isInitializing = true; }
+    void endInitialization() { m_isInitializing = false; }
+    void setScrollMode(ScrollMode mode) { m_scrollMode = mode; }
     void setInitialPenWidth(int width);
     void setInitialTextSize(int size);
     void setPenColor(const QColor &color);
@@ -88,6 +102,7 @@ protected:
     void wheelEvent(QWheelEvent *event) override;
     void enterEvent(QEnterEvent *event) override;
     void leaveEvent(QEvent *event) override;
+    bool eventFilter(QObject *watched, QEvent *event) override;
 
 private slots:
     void handleTextEditingFinished();
@@ -97,13 +112,13 @@ private slots:
 private:
     void cycleScrollMode();
     void cycleScrollModeBackward();
-    QString scrollModeToString() const;
-    QString toolToString(Tool tool) const;
     void showIndicator(const QString &subText = "");
 
+    bool m_isInitializing;
     bool drawing;
     bool mouseInside;
-    bool isMiddleButtonPressed; // Add this line
+    bool isMiddleButtonPressed;
+    bool m_ignoreNextRightRelease;
     Tool m_currentTool;
     ScrollMode m_scrollMode;
     int m_currentPenWidth;

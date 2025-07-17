@@ -17,11 +17,19 @@ find_package(Qt6 COMPONENTS Widgets REQUIRED)
 add_executable(CrystalBoard
     main.cpp
     mainwindow.cpp
-    mainwindow.h
     canvas.cpp
-    canvas.h
     helppanel.cpp
-    helppanel.h
 )
+
+# Ensure macOS creates a .app bundle for GUI applications
+if(APPLE)
+    set_target_properties(CrystalBoard PROPERTIES
+        MACOSX_BUNDLE TRUE
+    )
+endif()
+
+# --- Qt ---
+find_package(Qt6 REQUIRED COMPONENTS Widgets Core Gui)
+qt_standard_project_setup()
 
 target_link_libraries(CrystalBoard PRIVATE Qt6::Widgets)
