@@ -15,10 +15,10 @@ set(CMAKE_AUTOUIC ON)
 find_package(Qt6 COMPONENTS Widgets REQUIRED)
 
 add_executable(CrystalBoard
-    main.cpp
-    mainwindow.cpp
-    canvas.cpp
-    helppanel.cpp
+    src/main.cpp
+    src/mainwindow.cpp
+    src/canvas.cpp
+    src/helppanel.cpp
 )
 
 # Ensure macOS creates a .app bundle for GUI applications
