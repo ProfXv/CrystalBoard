@@ -21,6 +21,11 @@ add_executable(CrystalBoard
     src/helppanel.cpp
 )
 
+# Set the output name to be lowercase and hyphenated for CLI conventions
+set_target_properties(CrystalBoard PROPERTIES
+    OUTPUT_NAME "crystal-board"
+)
+
 # Ensure macOS creates a .app bundle for GUI applications
 if(APPLE)
     set_target_properties(CrystalBoard PROPERTIES

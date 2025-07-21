@@ -16,18 +16,18 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         include:
           - os: ubuntu-latest
-            asset_name: CrystalBoard-linux-x86_64.tar.gz
+            asset_name: crystal-board-linux-x86_64.tar.gz
             command: |
-              tar czf $ASSET_NAME CrystalBoard
+              tar czf $ASSET_NAME crystal-board
           - os: windows-latest
-            asset_name: CrystalBoard-windows-x86_64.zip
+            asset_name: crystal-board-windows-x86_64.zip
             command: |
-              7z a $ASSET_NAME Release/CrystalBoard.exe
+              7z a $ASSET_NAME Release/crystal-board.exe
           - os: macos-latest
-            asset_name: CrystalBoard-macos-x86_64.dmg
+            asset_name: crystal-board-macos-x86_64.dmg
             command: |
-              macdeployqt CrystalBoard.app
-              hdiutil create $ASSET_NAME -srcfolder CrystalBoard.app -ov
+              macdeployqt crystal-board.app
+              hdiutil create $ASSET_NAME -srcfolder crystal-board.app -ov
 
     steps:
     - name: Checkout code

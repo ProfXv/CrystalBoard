@@ -6,13 +6,14 @@
 #include <QKeyEvent>
 #include "canvas.h"
 #include "helppanel.h"
+#include <QVariantMap>
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(const QVariantMap &cmdLineOptions, QWidget *parent = nullptr);
     ~MainWindow();
 
 protected:
@@ -31,6 +32,8 @@ private:
 
     bool m_isLeftButtonPressed;
     bool m_isRightButtonPressed;
+
+    QVariantMap m_cmdLineOptions;
 
     QStackedWidget *stackedWidget;
     Canvas *canvas;
